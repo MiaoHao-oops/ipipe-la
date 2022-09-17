@@ -1,0 +1,579 @@
+/dts-v1/;
+/ {
+	model = "loongson,generic";
+	compatible = "loongson,loongson3";
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	aliases {
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac1;
+		serial0 = &cpu_uart0;
+		spi0 = &spi0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+		bootargs = "earlycon";
+	};
+
+	memory {
+		name = "memory";
+		device_type = "memory";
+		reg =  <0 0x00200000 0 0x0ee00000
+			0 0x90000000 0 0x60000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		linux,cma {
+			compatible = "shared-dma-pool";
+			reusable;
+			size = <0x2000000>;
+			linux,cma-default;
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu-map {
+			cluster0 {
+				core0 {
+					cpu = <&cpu0>;
+				};
+			};
+		};
+
+
+		cpu0: cpu@10000 {
+			device_type = "cpu";
+			compatible = "loongarch";
+			reg=<0>;
+			numa-node-id = <0>;
+		};
+
+	};
+
+	cpuic: interrupt-controller {
+		compatible = "loongson,cpu-interrupt-controller";
+		interrupt-controller;
+		#interrupt-cells = <1>;
+	};
+
+	icu: interrupt-controller@1fe11400 {
+		compatible = "loongson,2k500-icu";
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		reg = <0 0x1fe11400 0 0x40
+			0 0x1fe11040 0 16>;
+		interrupt-parent = <&cpuic>;
+		interrupt-names = "cascade";
+		interrupts = <4>;
+	};
+
+	extioiic: interrupt-controller@0x1fe11600 {
+		compatible = "loongson,extioi-interrupt-controller";
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		interrupt-parent = <&cpuic>;
+		interrupts = <3>;
+		interrupt-names = "cascade";
+		vec_count=<128>;
+		misc_func=<0x100>;
+		eio_en_off=<27>;
+	};
+
+	soc {
+		compatible = "ls,nbus", "simple-bus";
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges = <0 0x10000000 0 0x10000000 0 0x10000000
+			0 0x2000000  0 0x2000000  0 0x2000000
+			0 0x20000000 0 0x20000000 0 0x10000000
+			0 0x40000000 0 0x40000000 0 0x40000000
+			0xfe 0x00000000 0xfe 0x00000000 0 0x40000000>;
+
+		isa@16400000 {
+			compatible = "isa";
+			#size-cells = <1>;
+			#address-cells = <2>;
+			ranges = <1 0 0 0x16400000 0x4000>;
+		};
+
+		cpu_uart0: serial@0x1ff40800 {
+			compatible = "ns16550a";
+			reg = <0 0x1ff40800 0 0x10>;
+			clock-frequency = <100000000>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <2>;
+			no-loopback-test;
+		};
+
+		dc@0x1f010000 {
+			compatible = "loongson,ls2k0500-dc";
+			#address-cells = <2>;
+			#size-cells = <2>;
+			ranges = <0 0x10000000 0 0x10000000 0 0x10000000
+				0 0x2000000 0 0x2000000 0 0x2000000>;
+
+			reg = <0 0x1f010000 0 0x10000
+				0 0x2000000 0 0x2000000>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <80>;
+
+			dc_io@0x1fe10000 {
+				compatible = "loongson,ls2k-dc_io";
+				reg = <0 0x1fe10000 0 0x40>;
+			};
+
+			pix0_pll@0x1fe10418 {
+				compatible = "loongson,ls2k-pix0_pll";
+				offset = <0x0418>;
+			};
+
+			pix1_pll@0x1fe10420 {
+				compatible = "loongson,ls2k-pix1_pll";
+				offset = <0x0420>;
+			};
+
+			dc0_i2c: pixi2c@0x1ff4a000{
+				compatible = "loongson,ls2k-i2c";
+				reg = <0 0x1ff4a000 0 0x0800>;
+				interrupt-parent = <&extioiic>;
+				interrupts = <18>;
+			};
+
+			dc1_i2c: pixi2c@0x1ff4a800 {
+				compatible = "loongson,ls2k-i2c";
+				reg = <0 0x1ff4a800 0 0x0800>;
+				interrupt-parent = <&extioiic>;
+				interrupts = <19>;
+			};
+		};
+
+		ahci@0x1f040000 {
+			compatible = "snps,spear-ahci";
+			reg = <0 0x1f040000 0 0x10000>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <75>;
+			dma-mask = <0x0 0xffffffff>;
+		};
+
+		pmc: syscon@0x1ff6c000 {
+			compatible = "syscon";
+			reg = <0x0 0x1ff6c000 0x0 0x58>;
+		};
+
+		reboot {
+			compatible ="syscon-reboot";
+			regmap = <&pmc>;
+			offset = <0x30>;
+			mask = <0x1>;
+		};
+
+		poweroff {
+			compatible ="syscon-poweroff";
+			regmap = <&pmc>;
+			offset = <0x14>;
+			mask = <0x3c00>;
+			value = <0x3c00>;
+		};
+
+		gmac0: ethernet@0x1f020000 {
+			compatible = "snps,dwmac-3.70a";
+			reg = <0 0x1f020000 0 0x10000>;
+			interrupt-parent = <&icu>;
+			interrupts = <12>;
+			interrupt-names = "macirq";
+			mac-address = [ 64 48 48 48 48 60 ];/* [>mac 64:48:48:48:48:60 <]*/
+			phy-mode = "rgmii";
+			bus_id = <0x0>;
+			phy_addr = <0xffffffff>;
+			dma-mask = <0xffffffff 0xffffffff>;
+		};
+
+		gmac1: ethernet@0x1f030000 {
+			compatible = "snps,dwmac-3.70a";
+			reg = <0 0x1f030000 0 0x10000>;
+			interrupt-parent = <&icu>;
+			interrupts = <14>;
+			interrupt-names = "macirq";
+			mac-address = [ 64 48 48 48 48 61 ];/* [>mac 64:48:48:48:48:61 <]*/
+			phy-mode = "rgmii";
+			bus_id = <0x1>;
+			phy_addr = <0xffffffff>;
+			dma-mask = <0xffffffff 0xffffffff>;
+		};
+
+		ohci@0x1f058000 {
+			compatible = "loongson,ls2k-ohci", "generic-ohci";
+			reg = <0 0x1f058000 0 0x8000>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <72>;
+			dma-mask = <0x0 0xffffffff>;
+		};
+
+		ehci@0x1f050000 {
+			compatible = "loongson,ls2k-ehci", "generic-ehci";
+			reg = <0 0x1f050000 0 0x8000>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <71>;
+			dma-mask = <0xffffffff 0xffffffff>;
+		};
+
+		usb2_phy: usb2phy@xhci {
+			compatible = "usb-dummy-phy";
+		};
+
+		usb3_phy: usb3phy@xhci {
+			compatible = "usb-dummy-phy";
+		};
+
+		xhci@0x1f060000 {
+			compatible = "synopsys,dwc3";
+			reg = <0 0x1f060000 0 0x10000>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <74>;
+			dma-mask = <0x0 0xffffffff>;
+			usb-phy = <&usb2_phy>, <&usb3_phy>;
+			dr_mode = "host";
+		};
+
+		pci@0x16000000 {
+			compatible = "loongson,ls2k-pci";
+			#interrupt-cells = <1>;
+			bus-range = <0x1 0x6>;
+			#size-cells = <2>;
+			#address-cells = <3>;
+
+			reg = < 0xfe 0x00000000 0 0x20000000>;
+			ranges = <0x02000000 0 0x40000000 0 0x40000000 0 0x40000000
+				  0x01000000 0 0x00004000 0 0x16404000 0x0 0x4000>;
+
+			pci_bridge@0,0 {
+				compatible = "pciclass060400",
+						   "pciclass0604";
+
+				reg = <0x0000 0x0 0x0 0x0 0x0>;
+				interrupts = <81>;
+				interrupt-parent = <&extioiic>;
+
+				#interrupt-cells = <1>;
+				interrupt-map-mask = <0 0 0 0>;
+				interrupt-map = <0 0 0 0 &extioiic 81>;
+			};
+			pci_bridge@1,0 {
+				compatible = "pciclass060400",
+						   "pciclass0604";
+
+				reg = <0x0800 0x0 0x0 0x0 0x0>;
+				interrupts = <82>;
+				interrupt-parent = <&extioiic>;
+
+				#interrupt-cells = <1>;
+				interrupt-map-mask = <0 0 0 0>;
+				interrupt-map = <0 0 0 0 &extioiic 82>;
+			};
+		};
+
+#ifdef LS2K500_HAVE_PCI
+		ls2k500pci@0x17100000 {
+			compatible = "loongson,ls2k500-pci";
+			#interrupt-cells = <1>;
+			bus-range = <0x10 0x14>;
+			#size-cells = <2>;
+			#address-cells = <3>;
+			linux,pci-domain = <2>;
+
+#if 0
+			pci-gpios = <&pioA 0 0>, <&pioA 1 0>;
+			interrupt-map-mask = <0xf800 0 0 7>;
+			interrupt-map =
+				<0x0f8000 0 0 1 &icu 58>, /* Slot 9 */
+				<0x0f8000 0 0 2 &icu 58>,
+				<0x0f8000 0 0 3 &icu 58>,
+				<0x0f8000 0 0 4 &icu 58>,
+				<0x0f8800 0 0 1 &icu 58>, /* Slot 10 */
+				<0x0f8800 0 0 2 &icu 58>,
+				<0x0f8800 0 0 3 &icu 58>,
+				<0x0f8800 0 0 4 &icu 58>;
+#else
+				pci-gpios = <&pioB 22 0>;
+				interrupt-map-mask = <0 0 0 0>;
+				interrupt-map = <0 0 0 0 &icu 60>;
+#endif
+				reg = < 0x0 0x17100000 0 0x10000
+					0x0 0x17110000 0 0x10000
+					0x0 0x1fe11100 0 0x100 >;
+			ranges = <0x02000000 0 0x20000000 0 0x20000000 0 0x10000000
+				  0x01000000 0 0x00008000 0 0x17008000 0x0 0x4000>;
+		};
+#endif
+
+		pioA:gpio@0x1fe10430 {
+			compatible = "loongson,loongson3-gpio";
+			reg = <0 0x1fe10430 0 0x20>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <64>;
+			conf_offset = <0>;
+			out_offset = <0x10>;
+			in_offset = <0x8>;
+			in_start_bit = <0>;
+			gpio_base = <0>;
+			support_irq;
+			interrupt-parent =<&icu>;
+			interrupts =
+				/*
+				 * Every 32 gpios share a interrupt line. We need to disable
+				 * unnecessary GPIO interrupts in the firmware.
+				 */
+				<58>,<58>,<58>,<58>,<58>,<58>,<58>,<58>,
+				<58>,<58>,<58>,<58>,<58>,<58>,<58>,<58>,
+				<58>,<58>,<58>,<58>,<58>,<58>,<58>,<58>,
+				<58>,<58>,<58>,<58>,<58>,<58>,<58>,<58>,
+				<59>,<59>,<59>,<59>,<59>,<59>,<59>,<59>,
+				<59>,<59>,<59>,<59>,<59>,<59>,<59>,<59>,
+				<59>,<59>,<59>,<59>,<59>,<59>,<59>,<59>,
+				<59>,<59>,<59>,<59>,<59>,<59>,<59>,<59>;
+		};
+
+		pioB:gpio@0x1fe10450 {
+			compatible = "loongson,loongson3-gpio";
+			reg = <0 0x1fe10450 0 0x20>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <64>;
+			conf_offset = <0>;
+			out_offset = <0x10>;
+			in_offset = <0x8>;
+			in_start_bit = <0>;
+			gpio_base = <64>;
+			support_irq;
+			interrupt-parent =<&icu>;
+			interrupts =
+				/*
+				 * Every 32 gpios share a interrupt line. We need to disable
+				 * unnecessary GPIO interrupts in the firmware.
+				 */
+				<60>,<60>,<60>,<60>,<60>,<60>,<60>,<60>,
+				<60>,<60>,<60>,<60>,<60>,<60>,<60>,<60>,
+				<60>,<60>,<60>,<60>,<60>,<60>,<60>,<60>,
+				<60>,<60>,<60>,<60>,<60>,<60>,<60>,<60>,
+				<61>,<61>,<61>,<61>,<61>,<61>,<61>,<61>,
+				<61>,<61>,<61>,<61>,<61>,<61>,<61>,<61>,
+				<61>,<61>,<61>,<61>,<61>,<61>,<61>,<61>,
+				<61>,<61>,<61>,<61>,<61>,<61>,<61>,<61>;
+		};
+
+		can0: can@1ff44000 {
+			compatible = "nxp,sja1000";
+			reg = <0 0x1ff44000 0 0x1000>;
+			nxp,external-clock-frequency = <100000000>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <10>;
+		};
+
+		can1: can@1ff45000 {
+			compatible = "nxp,sja1000";
+			reg = <0 0x1ff45000 0 0x1000>;
+			nxp,external-clock-frequency = <100000000>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <11>;
+		};
+
+		spi0: spi@0x1fd00000 {
+			compatible = "loongson,ls-spi";
+			reg = <0 0x1fd00000 0 0x10>;
+			spidev@0 {
+				compatible = "rohm,dh2228fv";
+				spi-max-frequency = <100000000>;
+				reg = <0>;
+			};
+		};
+
+		spi1: spi@0x1fd40000 {
+			compatible = "loongson,ls-spi";
+			reg = <0 0x1fd40000 0 0x10>;
+			status = "disabled";
+		};
+
+		/* SPI2~5 has only one CS, which is set by SPCS */
+		spi2: spi@0x1ff50000 {
+			compatible = "loongson,ls-spi";
+			reg = <0 0x1ff50000 0 0x10>;
+			spi-nocs;
+			status = "disabled";
+		};
+
+		spi3: spi@0x1ff51000 {
+			compatible = "loongson,ls-spi";
+			reg = <0 0x1ff51000 0 0x10>;
+			spi-nocs;
+			status = "disabled";
+		};
+
+		spi4: spi@0x1ff52000 {
+			compatible = "loongson,ls-spi";
+			reg = <0 0x1ff52000 0 0x10>;
+			spi-nocs;
+			status = "disabled";
+		};
+
+		spi5: spi@0x1ff53000 {
+			compatible = "loongson,ls-spi";
+			reg = <0 0x1ff53000 0 0x10>;
+			spi-nocs;
+			status = "disabled";
+		};
+
+		i2c0: i2c@0x1ff48000 {
+			compatible = "loongson,ls2k-i2c";
+			reg = <0 0x1ff48000 0 0x0800>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <14>;
+			eeprom@57 {
+				compatible = "atmel,24c16";
+				reg = <0x57>;
+				pagesize = <16>;
+			};
+		};
+
+		i2c1: i2c@0x1ff48800 {
+			compatible = "loongson,ls2k-i2c";
+			reg = <0 0x1ff48800 0 0x0800>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <15>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@0x1ff49000 {
+			compatible = "loongson,ls2k-i2c";
+			reg = <0 0x1ff49000 0 0x0800>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <16>;
+			status = "disabled";
+		};
+
+		i2c3: i2c@0x1ff49800 {
+			compatible = "loongson,ls2k-i2c";
+			reg = <0 0x1ff49800 0 0x0800>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <17>;
+			status = "disabled";
+		};
+
+		/*
+		 * DMA0 for NAND, DMA1/2 for AC97 read/write, DMA3 for SDIO0,
+		 * SDIO1 Reuse DMA0-2, need set apbdma-sel=<&apbdma 0xc000 1/2/3<<14>
+		 */
+		apbdma: apbdma@0x1fe10100 {
+			compatible = "loongson,ls-apbdma";
+			reg = <0 0x1fe10100 0 0x4>;
+			#config-nr = <2>;
+		};
+
+		dma0: dma@0x1fe10c00 {
+			compatible = "loongson,ls-apbdma-0";
+			reg = <0 0x1fe10c00 0 0x8>;
+			apbdma-sel = <&apbdma 0x0 0x0>;
+			#dma-cells = <1>;
+			dma-channels = <1>;
+			dma-requests = <1>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <67>;
+		};
+
+		dma1: dma@0x1fe10c10 {
+			compatible = "loongson,ls-apbdma-1";
+			reg = <0 0x1fe10c10 0 0x8>;
+			apbdma-sel = <&apbdma 0x0 0x0>;
+			#dma-cells = <1>;
+			dma-channels = <1>;
+			dma-requests = <1>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <68>;
+		};
+
+		dma2: dma@0x1fe10c20 {
+			compatible = "loongson,ls-apbdma-2";
+			reg = <0 0x1fe10c20 0 0x8>;
+			apbdma-sel = <&apbdma 0xc000 0xc000>;	/* 0xc000 for sdio1*/
+			#dma-cells = <1>;
+			dma-channels = <1>;
+			dma-requests = <1>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <69>;
+		};
+
+		dma3: dma@0x1fe10c30 {
+			compatible = "loongson,ls-apbdma-3";
+			reg = <0 0x1fe10c30 0 0x8>;
+			apbdma-sel = <&apbdma 0x0 0x0>;
+			#dma-cells = <1>;
+			dma-channels = <1>;
+			dma-requests = <1>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <70>;
+		};
+
+		sdio0@0x1ff64000 {
+			#address-cells = <2>;
+			compatible = "loongson,ls2k_sdio";
+			reg = <0 0x1ff64000 0 0x1000>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <57>;
+			interrupt-names = "ls2k_mci_irq";
+			dmas = <&dma3 1>;
+			dma-names = "sdio_rw";
+			dma-mask = <0xffffffff 0xffffffff>;
+			clock-frequency = <0 125000000>;
+			cd-gpios = <&pioA 44 0>;
+			status = "disabled";
+		};
+
+		sdio1@0x1ff66000 {
+			#address-cells = <2>;
+			compatible = "loongson,ls2k_sdio";
+			reg = <0 0x1ff66000 0 0x1000>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <58>;
+			interrupt-names = "ls2k_mci_irq";
+			dmas = <&dma2 1>;
+			dma-names = "sdio_rw";
+			dma-mask = <0xffffffff 0xffffffff>;
+			clock-frequency = <0 125000000>;
+			cd-gpios = <&pioB 22 0>;
+			status = "disabled";
+		};
+
+		nand@0x1ff58040 {
+			#address-cells = <2>;
+			compatible = "loongson,ls-nand";
+			reg = <0 0x1ff58040 0 0x0
+				0 0x1ff58000 0 0x20>;
+			interrupt-parent = <&extioiic>;
+			interrupts = <31>;
+			interrupt-names = "nand_irq";
+			dmas = <&dma0 1>;
+			dma-names = "nand_rw";
+			dma-mask = <0xffffffff 0xffffffff>;
+			nand-cs = <0x0>;
+			status = "disabled";
+
+			number-of-parts = <0x2>;
+			partition@0 {
+				label = "kernel_partition";
+				reg = <0 0x0000000 0 0x01e00000>;
+			};
+			partition@0x01e00000 {
+				label = "os_partition";
+				reg = <0 0x01e00000 0 0x0>;
+			};
+		};
+	};
+};
