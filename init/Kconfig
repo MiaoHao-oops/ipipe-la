@@ -48,6 +48,9 @@ config THREAD_INFO_IN_TASK
 
 menu "General setup"
 
+config RUN_ON_QEMU
+	bool "Run on loongarch64 qemu"
+
 config BROKEN
 	bool
 

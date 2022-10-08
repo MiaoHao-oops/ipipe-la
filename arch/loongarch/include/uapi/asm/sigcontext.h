@@ -9,6 +9,7 @@
 
 #include <linux/types.h>
 #include <linux/posix_types.h>
+#include <asm/processor.h>
 
 /* FP context was used */
 #define USED_FP			(1 << 0)
@@ -16,7 +17,7 @@
 #define ADRERR_RD		(1 << 30)
 #define ADRERR_WR		(1 << 31)
 
-#define FPU_REG_WIDTH		256
+// #define FPU_REG_WIDTH		256
 
 struct sigcontext {
 	__u64	sc_pc;

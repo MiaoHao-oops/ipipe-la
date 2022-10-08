@@ -5,6 +5,7 @@
 #include <linux/sizes.h>
 #include <linux/uaccess.h>
 
+#include <asm/cacheflush.h>
 #include <asm/inst.h>
 #include <asm/kprobes.h>
 

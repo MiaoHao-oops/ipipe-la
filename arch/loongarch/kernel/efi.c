@@ -194,7 +194,11 @@ void __init efi_init(void)
 		return;
 	}
 	set_bit(EFI_64BIT, &efi.flags);
+#ifdef CONFIG_RUN_ON_QEMU
+	efi.config_table = (unsigned long)early_memremap_ro
+		((unsigned long)efi.systab->tables, sizeof(efi.config_table));
+#else
 	efi.config_table = (unsigned long)efi.systab->tables;
-
+#endif
 	efi_config_init(arch_tables);
 }
