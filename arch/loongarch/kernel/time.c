@@ -23,6 +23,12 @@
 #include <asm/time.h>
 #include <asm/paravirt.h>
 
+#ifdef CONFIG_IPIPE
+#include <linux/ipipe.h>
+#include <linux/ipipe_tickdev.h>
+#include <asm/ipipe.h>
+#endif
+
 DEFINE_SPINLOCK(rtc_lock);
 EXPORT_SYMBOL(rtc_lock);
 
@@ -34,19 +40,49 @@ EXPORT_SYMBOL(const_clock_freq);
 static DEFINE_SPINLOCK(state_lock);
 static DEFINE_PER_CPU(struct clock_event_device, constant_clockevent_device);
 
+#ifdef CONFIG_IPIPE
+static DEFINE_PER_CPU(struct ipipe_timer, arch_itimer);
+static void loongarch_ipipe_itimer_ack(void)
+{
+	/* Clear Count/Compare Interrupt */
+	write_csr_tintclear(CSR_TINTCLR_TI);
+}
+
+static struct __ipipe_tscinfo tsc_info = {
+        .type = IPIPE_TSC_TYPE_FREERUNNING_ARCH,
+        .u = {
+                {
+                        .mask = 0xffffffffffffffff,
+                },
+        },
+};
+#endif /* CONFIG_IPIPE */
+
 static void constant_event_handler(struct clock_event_device *dev)
 {
 }
 
 irqreturn_t constant_timer_interrupt(int irq, void *data)
 {
+	static unsigned int count = 0;
 	int cpu = smp_processor_id();
 	struct clock_event_device *cd;
+#ifdef CONFIG_IPIPE
+       struct ipipe_timer *itimer = raw_cpu_ptr(&arch_itimer);
+#endif
 
 	/* Clear Timer Interrupt */
-	write_csr_tintclear(CSR_TINTCLR_TI);
 	cd = &per_cpu(constant_clockevent_device, cpu);
+#ifdef CONFIG_IPIPE
+       if (clockevent_ipipe_stolen(cd))
+               goto stolen;
+       if (itimer->irq != irq)
+               itimer->irq = irq;
+stolen:                
+#endif
+	write_csr_tintclear(CSR_TINTCLR_TI);
 	cd->event_handler(cd);
+	count++;
 
 	return IRQ_HANDLED;
 }
@@ -145,6 +181,9 @@ int constant_clockevent_init(void)
 	unsigned long max_delta = (1UL << 48) - 1;
 	struct clock_event_device *cd;
 	static int timer_irq_installed = 0;
+#ifdef CONFIG_IPIPE
+	unsigned int flags;
+#endif
 
 	irq = LOONGSON_TIMER_IRQ;
 
@@ -162,6 +201,16 @@ int constant_clockevent_init(void)
 	cd->set_state_shutdown = constant_set_state_shutdown;
 	cd->set_next_event = constant_timer_next_event;
 	cd->event_handler = constant_event_handler;
+
+#ifdef CONFIG_IPIPE
+	flags = irq_get_trigger_type(irq);
+	enable_percpu_irq(cd->irq,flags);
+
+        cd->ipipe_timer = raw_cpu_ptr(&arch_itimer);
+        cd->ipipe_timer->freq = const_clock_freq;
+        cd->ipipe_timer->irq = cd->irq;
+        cd->ipipe_timer->ack = loongarch_ipipe_itimer_ack;
+#endif
 
 	clockevents_config_and_register(cd, const_clock_freq, min_delta, max_delta);
 
@@ -211,6 +260,11 @@ int __init constant_clocksource_init(void)
 
 	clocksource_const.mult =
 		clocksource_hz2mult(freq, clocksource_const.shift);
+
+#ifdef CONFIG_IPIPE
+        tsc_info.freq = freq;
+        __ipipe_tsc_register(&tsc_info);
+#endif /* CONFIG_IPIPE */
 
 	res = clocksource_register_hz(&clocksource_const, freq);
 

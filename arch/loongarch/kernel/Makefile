@@ -32,6 +32,7 @@ endif
 KASAN_SANITIZE_vdso.o := n
 
 obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
+obj-$(CONFIG_IPIPE)       += ipipe.o
 obj-$(CONFIG_MODULES)		+= module.o
 obj-$(CONFIG_JUMP_LABEL)	+= jump_label.o
 

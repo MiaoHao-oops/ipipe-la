@@ -137,11 +137,130 @@ loongson3_send_ipi_mask(const struct cpumask *mask, unsigned int action)
 		ipi_write_action(cpu_logical_map(i), (u32)action);
 }
 
+#ifdef CONFIG_IPIPE
+
+static DEFINE_PER_CPU(unsigned long, ipi_messages);
+
+#define noipipe_irq_enter()                    \
+       do {                                    \
+       } while (0)
+#define noipipe_irq_exit()                     \
+       do {                                    \
+       } while (0)
+
+
+static void  __ipipe_do_IPI(unsigned int virq, void *cookie)
+{
+       unsigned int ipinr = virq - IPIPE_IPI_BASE;
+
+       loongson3_ipi_interrupt(ipinr);
+}
+
+void __ipipe_ipis_alloc(void)
+{
+       unsigned int virq, ipi;
+       static bool done;
+
+       if (done)
+               return;
+
+       /*
+        * We have to get virtual IRQs in the range
+        * [ IPIPE_IPI_BASE..IPIPE_IPI_BASE + NR_IPI + IPIPE_OOB_IPI_NR - 1 ],
+        * otherwise something is wrong (likely someone would have
+        * allocated virqs before we do, and this would break our
+        * fixed numbering scheme for IPIs).
+        */
+       for (ipi = 0; ipi < NR_IPI + IPIPE_OOB_IPI_NR; ipi++) {
+               virq = ipipe_alloc_virq();
+               WARN_ON_ONCE(virq != IPIPE_IPI_BASE + ipi);
+       }
+
+       done = true;
+}
+void __ipipe_ipis_request(void)
+{
+       unsigned int virq;
+
+       /*
+        * Attach a handler to each VIRQ mapping an IPI which might be
+        * posted by __ipipe_grab_ipi(). This handler will invoke
+        * handle_IPI() from the root stage in turn, passing it the
+        * corresponding IPI message number.
+        */
+       for (virq = IPIPE_IPI_BASE;
+            virq < IPIPE_IPI_BASE + NR_IPI + IPIPE_OOB_IPI_NR; virq++)
+               ipipe_request_irq(ipipe_root_domain,
+                                 virq,
+                                 (ipipe_irq_handler_t)__ipipe_do_IPI,
+                                 NULL, NULL);
+}
+
+static void smp_cross_call(const struct cpumask *target, unsigned int ipinr)
+{
+       unsigned int cpu, sgi;
+       unsigned long flags;
+
+       if (ipinr < NR_IPI) {
+               /* regular in-band IPI (multiplexed over SGI0). */
+               for_each_cpu(cpu, target)
+                       set_bit(ipinr, &per_cpu(ipi_messages, cpu));
+               smp_mb();
+               sgi = 0;
+       } else  /* out-of-band IPI (SGI1-3). */
+//               sgi = ipinr - NR_IPI + 1;
+               sgi = 1 << ipinr;
+	flags = hard_local_irq_save();
+       loongson3_send_ipi_mask(target, sgi);
+       hard_local_irq_restore(flags);
+}
+
+void ipipe_send_ipi(unsigned int ipi, cpumask_t cpumask)
+{
+       unsigned int ipinr = ipi - IPIPE_IPI_BASE;
+
+       smp_cross_call(&cpumask, ipinr);
+}
+EXPORT_SYMBOL_GPL(ipipe_send_ipi);
+
+ /* hw IRQs off */
+asmlinkage void __ipipe_grab_ipi(unsigned int sgi, struct pt_regs *regs)
+{
+       unsigned int ipinr, irq;
+       unsigned long *pmsg;
+
+       if (sgi) {              /* SGI1-3, OOB messages. */
+               irq = sgi + NR_IPI - 1 + IPIPE_IPI_BASE;
+               __ipipe_dispatch_irq(irq, IPIPE_IRQF_NOACK);
+       } else {
+               /* In-band IPI (0..NR_IPI-1) multiplexed over SGI0. */
+               pmsg = raw_cpu_ptr(&ipi_messages);
+               while (*pmsg) {
+                       ipinr = ffs(*pmsg) - 1;
+                       clear_bit(ipinr, pmsg);
+                       irq = IPIPE_IPI_BASE + ipinr;
+                       __ipipe_dispatch_irq(irq, IPIPE_IRQF_NOACK);
+               }
+       }
+
+       __ipipe_exit_irq(regs);
+}
+
+#else
+
+#define noipipe_irq_enter()    irq_enter()
+#define noipipe_irq_exit()     irq_exit()
+
+#endif /* CONFIG_IPIPE */
+
 void loongson3_ipi_interrupt(int irq)
 {
 	unsigned int action;
 	unsigned int cpu = smp_processor_id();
-
+#ifdef CONFIG_IPIPE
+	struct pt_regs *regs;
+        regs = raw_cpu_ptr(&ipipe_percpu.tick_regs);
+#endif
 	action = ipi_read_clear(cpu_logical_map(cpu));
 
 	smp_mb();
@@ -157,6 +276,11 @@ void loongson3_ipi_interrupt(int irq)
 		generic_smp_call_function_interrupt();
 		irq_exit();
 	}
+#ifdef CONFIG_IPIPE
+        if(action == 1<<NR_IPI){
+                ipipe_handle_multi_ipi(action>>NR_IPI,regs);
+        }
+#endif
 }
 
 /*

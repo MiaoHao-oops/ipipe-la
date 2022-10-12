@@ -11,7 +11,9 @@
 #include <linux/stringify.h>
 #include <asm/loongarchregs.h>
 #include <asm/compiler.h>
+#include <asm/ipipe_hwirq.h>
 
+#ifndef CONFIG_IPIPE
 static inline void arch_local_irq_disable(void)
 {
 	csr_xchgl(0, CSR_CRMD_IE, LOONGARCH_CSR_CRMD);
@@ -42,6 +44,8 @@ static inline int arch_irqs_disabled_flags(unsigned long flags)
 {
 	return !(flags & CSR_CRMD_IE);
 }
+
+#endif /* CONFIG_IPIPE */
 
 #endif /* #ifndef __ASSEMBLY__ */
 

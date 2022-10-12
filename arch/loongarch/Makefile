@@ -278,3 +278,6 @@ define archhelp
 	echo '  dtbs_install         - Install dtbs to $(INSTALL_DTBS_PATH)'
 	echo
 endef
+
+# KBUILD_CFLAGS += -I$(srctree)/arch/$(SRCARCH)/xenomai/include -I$(srctree)/arch/$(SRCARCH)/xenomai/ipipe/include -I$(srctree)/include/xenomai
+# core-$(CONFIG_XENOMAI) += arch/loongarch/xenomai/ipipe/

@@ -10,8 +10,10 @@
 #include <linux/irqchip.h>
 #include <linux/irqdomain.h>
 
+#include <asm/ipipe.h>
 #include <asm/irq_cpu.h>
 #include <asm/loongarchregs.h>
+#include <asm/ptrace.h>
 #include <asm/setup.h>
 #include <larchintrin.h>
 
@@ -45,10 +47,18 @@ static struct irq_chip loongarch_cpu_irq_controller = {
 
 asmlinkage void __weak plat_irq_dispatch(int irq)
 {
+	/*
+	 * TODO: entering ipipe interrupt flow from this function
+	 * by calling ipipe_handle_domain_irq()
+	 */
+#ifdef CONFIG_IPIPE
+	struct pt_regs *regs = current_pt_regs();
+	ipipe_handle_domain_irq(irq_domain, irq, regs);
+#else
 	unsigned int virq;
-
 	virq = irq_linear_revmap(irq_domain, irq);
 	do_IRQ(virq);
+#endif
 }
 
 static int loongarch_cpu_intc_map(struct irq_domain *d, unsigned int irq,

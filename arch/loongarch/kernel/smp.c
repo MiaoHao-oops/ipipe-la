@@ -24,6 +24,8 @@
 #include <linux/delay.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
+#include <linux/ipipe.h>
+#include <linux/ipipe_domain.h>
 #include <linux/smp.h>
 #include <linux/spinlock.h>
 #include <linux/threads.h>
@@ -209,6 +211,10 @@ asmlinkage void start_secondary(void)
 	 */
 	WARN_ON_ONCE(!irqs_disabled());
 	mp_ops->smp_finish();
+
+#ifdef CONFIG_IPIPE
+       local_irq_enable();
+#endif
 
 	cpu_startup_entry(CPUHP_AP_ONLINE_IDLE);
 }

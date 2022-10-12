@@ -14,6 +14,7 @@
 #ifndef __ASSEMBLY__
 
 #include <asm/processor.h>
+#include <ipipe/thread_info.h>
 
 /*
  * low level task data that entry.S needs immediate access to
@@ -48,6 +49,10 @@ struct thread_info {
 
 	unsigned long		wait_num;
 	unsigned long		last_waittime;
+#ifdef CONFIG_IPIPE
+	unsigned long 		ipipe_flags;
+	struct ipipe_threadinfo	ipipe_data;
+#endif
 };
 
 /*
@@ -163,6 +168,17 @@ static inline struct thread_info *current_thread_info(void)
 #define _TIF_ALLWORK_MASK	(_TIF_NOHZ | _TIF_WORK_MASK |		\
 				 _TIF_WORK_SYSCALL_EXIT |		\
 				 _TIF_SYSCALL_TRACEPOINT)
+
+/* ti->ipipe_flags */
+#define TIP_MAYDAY	0	/* MAYDAY call is pending */
+#define TIP_NOTIFY	1	/* Notify head domain about kernel events */
+#define TIP_HEAD	2	/* Runs in head domain */
+#define TIP_USERINTRET	3	/* Notify on IRQ/trap return to root userspace */
+
+#define _TIP_MAYDAY	(1 << TIP_MAYDAY)
+#define _TIP_NOTIFY	(1 << TIP_NOTIFY)
+#define _TIP_HEAD	(1 << TIP_HEAD)
+#define _TIP_USERINTRET	(1 << TIP_USERINTRET)
 
 #endif /* __KERNEL__ */
 #endif /* _ASM_THREAD_INFO_H */
