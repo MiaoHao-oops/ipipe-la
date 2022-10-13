@@ -32,7 +32,6 @@ endif
 KASAN_SANITIZE_vdso.o := n
 
 obj-$(CONFIG_STACKTRACE)	+= stacktrace.o
-obj-$(CONFIG_IPIPE)       += ipipe.o
 obj-$(CONFIG_MODULES)		+= module.o
 obj-$(CONFIG_JUMP_LABEL)	+= jump_label.o
 
@@ -69,5 +68,7 @@ obj-$(CONFIG_UNWINDER_PROLOGUE)	+= unwind_prologue.o
 obj-$(CONFIG_UNWINDER_ORC)		+= unwind_orc.o
 
 obj-$(CONFIG_PARAVIRT)        += paravirt.o
+
+obj-$(CONFIG_IPIPE)       += ipipe.o
 
 CPPFLAGS_vmlinux.lds		:= $(KBUILD_CFLAGS)

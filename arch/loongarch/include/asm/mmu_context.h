@@ -17,6 +17,8 @@
 #include <asm/tlbflush.h>
 #include <asm-generic/mm_hooks.h>
 
+#include <asm-generic/ipipe.h>
+
 /*
  *  All unused by hardware upper bits will be considered
  *  as a software asid extension.
@@ -84,7 +86,7 @@ init_new_context(struct task_struct *tsk, struct mm_struct *mm)
 	return 0;
 }
 
-static inline void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *next,
+static inline void do_switch_mm(struct mm_struct *prev, struct mm_struct *next,
 			     struct task_struct *tsk)
 {
 	unsigned int cpu = smp_processor_id();
@@ -103,6 +105,16 @@ static inline void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *
 	 * We don't want to mislead possible IPI tlb flush routines.
 	 */
 	cpumask_set_cpu(cpu, mm_cpumask(next));
+}
+
+static inline void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *next,
+			     struct task_struct *tsk)
+{
+	unsigned long flags;
+
+	flags = hard_local_irq_save();
+	do_switch_mm(prev, next, tsk);
+	hard_local_irq_restore(flags);
 }
 
 #define switch_mm_irqs_off switch_mm_irqs_off
@@ -164,5 +176,14 @@ drop_mmu_context(struct mm_struct *mm, unsigned cpu)
 	cpumask_clear_cpu(cpu, mm_cpumask(mm));
 	local_irq_restore(flags);
 }
+
+#ifdef CONFIG_IPIPE
+static inline void
+ipipe_switch_mm_head(struct mm_struct *prev, struct mm_struct *next,
+                          struct task_struct *tsk)
+{
+       do_switch_mm(prev, next, tsk);
+}
+#endif
 
 #endif /* _ASM_MMU_CONTEXT_H */

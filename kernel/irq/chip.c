@@ -1404,7 +1404,6 @@ void handle_fasteoi_ack_irq(struct irq_desc *desc)
 	cond_unmask_eoi_irq(desc, chip);
 #endif
 
-
 	raw_spin_unlock(&desc->lock);
 	return;
 out:

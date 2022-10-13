@@ -35,10 +35,6 @@ static int ls_spiflash_write_en(unsigned char wr_en)
 	u8 cmd[1];
 	struct spi_message msg;
 
-	if (spi_dev == NULL) {
-		return -ENODEV;
-	}
-
 	DECLARE_COMPLETION_ONSTACK(done);
 
 	struct spi_transfer instruction = {
@@ -46,6 +42,10 @@ static int ls_spiflash_write_en(unsigned char wr_en)
 			.rx_buf = NULL,
 			.len = 1,
 	};
+	
+	if (spi_dev == NULL) {
+		return -ENODEV;
+	}
 
 	cmd[0] = wr_en;
 	spi_message_init(&msg);
@@ -66,10 +66,6 @@ unsigned char ls_spiflash_read_status(void)
 	u8 cmd[1],ret;
 	struct spi_message msg;
 
-	if (spi_dev == NULL) {
-		return -ENODEV;
-	}
-
 	DECLARE_COMPLETION_ONSTACK(done);
 
 	struct spi_transfer instruction = {
@@ -83,6 +79,10 @@ unsigned char ls_spiflash_read_status(void)
 			.rx_buf = &ret,
 			.len = 1,
 	};
+
+	if (spi_dev == NULL) {
+		return -ENODEV;
+	}
 
 	cmd[0] = RD_STATUS;
 	spi_message_init(&msg);
@@ -105,10 +105,6 @@ static int ls_spiflash_sec_erase(int addr)
 	u8 cmd[4];
 	struct spi_message msg;
 
-	if (spi_dev == NULL) {
-		return -ENODEV;
-	}
-
 	DECLARE_COMPLETION_ONSTACK(done);
 
 	struct spi_transfer instruction = {
@@ -116,6 +112,10 @@ static int ls_spiflash_sec_erase(int addr)
 			.rx_buf = NULL,
 			.len = 4,
 	};
+
+	if (spi_dev == NULL) {
+		return -ENODEV;
+	}
 
 	addr &= ~(SECTOR_SIZE - 1);
 	cmd[0] = SEC_ERASE;
@@ -141,11 +141,6 @@ int ls_spiflash_read(int addr, unsigned char *buf,int data_len)
 	u8 cmd[4];
 	struct spi_message msg;
 
-	if (spi_dev == NULL) {
-		printk("SPI driver is not registered !\n");
-		return -ENODEV;
-	}
-
 	DECLARE_COMPLETION_ONSTACK(done);
 
 	struct spi_transfer instruction = {
@@ -159,6 +154,11 @@ int ls_spiflash_read(int addr, unsigned char *buf,int data_len)
 			.rx_buf = buf,
 			.len = data_len,
 	};
+
+	if (spi_dev == NULL) {
+		printk("SPI driver is not registered !\n");
+		return -ENODEV;
+	}
 
 	cmd[0] = READ_DATA;
 	cmd[1] = (addr >> 16) & 0xff;
@@ -185,10 +185,6 @@ static int spi_flash_page_program(int addr, unsigned char *buf,int data_len)
 	u8 cmd[4];
 	struct spi_message msg;
 
-	if (spi_dev == NULL) {
-		return -ENODEV;
-	}
-
 	DECLARE_COMPLETION_ONSTACK(done);
 
 	struct spi_transfer instruction = {
@@ -202,6 +198,10 @@ static int spi_flash_page_program(int addr, unsigned char *buf,int data_len)
 			.tx_buf = buf,
 			.len = data_len,
 	};
+
+	if (spi_dev == NULL) {
+		return -ENODEV;
+	}
 
 	cmd[0] = PAGE_PROGRAM;
 	cmd[1] = (addr >> 16) & 0xff;

@@ -251,6 +251,12 @@ asmlinkage void __ipipe_grab_ipi(unsigned int sgi, struct pt_regs *regs)
 #define noipipe_irq_enter()    irq_enter()
 #define noipipe_irq_exit()     irq_exit()
 
+static void smp_cross_call(const struct cpumask *target, unsigned int ipinr)
+{
+       trace_ipi_raise(target, ipi_types[ipinr]);
+       __smp_cross_call(target, ipinr);
+}
+
 #endif /* CONFIG_IPIPE */
 
 void loongson3_ipi_interrupt(int irq)

@@ -205,7 +205,7 @@ int ipipe_handle_domain_irq(struct irq_domain *domain,
 #ifdef CONFIG_SMP
 static inline void ipipe_handle_multi_ipi(int irq, struct pt_regs *regs)
 {
-	// handle_IPI(irq, regs);
+	loongson3_ipi_interrupt(irq);
 }
 #endif /* CONFIG_SMP */
 
