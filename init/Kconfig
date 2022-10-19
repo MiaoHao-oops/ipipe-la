@@ -2058,7 +2058,7 @@ menuconfig XENOMAI
 	  Please visit http://xenomai.org for more information.
 
 if XENOMAI
-source "arch/arm/xenomai/Kconfig"
+source "arch/loongarch/xenomai/Kconfig"
 endif
 
 if MIGRATION

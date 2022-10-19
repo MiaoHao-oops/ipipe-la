@@ -43,6 +43,9 @@ static struct irq_chip loongarch_cpu_irq_controller = {
 	.irq_eoi	= unmask_loongarch_irq,
 	.irq_disable	= mask_loongarch_irq,
 	.irq_enable	= unmask_loongarch_irq,
+#ifdef CONFIG_IPIPE
+	.flags		= IRQCHIP_PIPELINE_SAFE,
+#endif
 };
 
 asmlinkage void __weak plat_irq_dispatch(int irq)

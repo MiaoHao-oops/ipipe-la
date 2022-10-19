@@ -93,7 +93,6 @@ int ext_set_irq_affinity(struct irq_data *d, const struct cpumask *affinity,
 	uint32_t vector, pos_off;
 	unsigned long flags;
 	unsigned int cpu;
-	int node;
 	struct extioi *priv = (struct extioi *)d->domain->host_data;
 	struct cpumask intersect_affinity;
 
@@ -231,6 +230,9 @@ static struct irq_chip extioi_irq_chip = {
 	.irq_mask		= extioi_mask_irq,
 	.irq_unmask		= extioi_unmask_irq,
 	.irq_set_affinity	= ext_set_irq_affinity,
+#ifdef CONFIG_IPIPE
+	.flags			= IRQCHIP_PIPELINE_SAFE,
+#endif
 };
 
 static int extioi_domain_translate(struct irq_domain *d,

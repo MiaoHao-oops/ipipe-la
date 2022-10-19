@@ -279,5 +279,5 @@ define archhelp
 	echo
 endef
 
-# KBUILD_CFLAGS += -I$(srctree)/arch/$(SRCARCH)/xenomai/include -I$(srctree)/arch/$(SRCARCH)/xenomai/ipipe/include -I$(srctree)/include/xenomai
-# core-$(CONFIG_XENOMAI) += arch/loongarch/xenomai/ipipe/
+KBUILD_CFLAGS += -I$(srctree)/arch/$(SRCARCH)/xenomai/include -I$(srctree)/arch/$(SRCARCH)/xenomai/ipipe/include -I$(srctree)/include/xenomai
+core-$(CONFIG_XENOMAI) += arch/loongarch/xenomai/ipipe/

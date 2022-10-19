@@ -202,7 +202,11 @@ static struct irq_chip pch_line_irq_chip = {
 	.irq_startup		= pch_line_startup,
 	.irq_shutdown		= pch_line_shutdown,
 	.irq_set_affinity	= def_set_irq_affinity,
-	.flags			= IRQCHIP_SKIP_SET_WAKE,
+	.flags			= IRQCHIP_SKIP_SET_WAKE
+#ifdef CONFIG_IPIPE
+					| IRQCHIP_PIPELINE_SAFE
+#endif
+					,
 };
 
 static struct irq_chip pch_pic_irq_chip = {
@@ -214,7 +218,11 @@ static struct irq_chip pch_pic_irq_chip = {
 	.irq_set_type		= pch_pic_set_type,
 	.irq_startup		= pch_pic_startup,
 	.irq_shutdown		= pch_pic_shutdown,
-	.flags			= IRQCHIP_SKIP_SET_WAKE,
+	.flags			= IRQCHIP_SKIP_SET_WAKE
+#ifdef CONFIG_IPIPE
+					| IRQCHIP_PIPELINE_SAFE
+#endif
+					,
 };
 
 static void pch_handle_irq(struct irq_desc *desc)

@@ -88,6 +88,9 @@ static struct irq_chip htvec_irq_chip = {
 	.irq_unmask		= htvec_unmask_irq,
 	.irq_ack		= htvec_ack_irq,
 	.irq_set_affinity	= def_set_irq_affinity,
+#ifdef CONFIG_IPIPE
+	.flags			= IRQCHIP_PIPELINE_SAFE,
+#endif
 };
 
 static int htvec_domain_translate(struct irq_domain *d,

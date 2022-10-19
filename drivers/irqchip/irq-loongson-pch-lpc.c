@@ -96,8 +96,13 @@ static struct irq_chip pch_lpc_irq_chip = {
 	.irq_mask_ack		= mask_ack_lpc_irq,
 	.irq_eoi		= unmask_lpc_irq,
 	.irq_set_type		= pch_lpc_set_type,
-	.flags			= IRQCHIP_MASK_ON_SUSPEND,
-};
+	.flags			= IRQCHIP_MASK_ON_SUSPEND
+#ifdef CONFIG_IPIPE     
+        			| IRQCHIP_PIPELINE_SAFE
+#endif
+				,
+	
+ };
 
 static void pch_handle_irq(struct irq_desc *desc)
 {

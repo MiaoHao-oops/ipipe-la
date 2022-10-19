@@ -59,6 +59,9 @@ static struct irq_chip pch_msi_irq_chip = {
 	.irq_ack		= irq_chip_ack_parent,
 	.irq_set_affinity	= irq_chip_set_affinity_parent,
 	.irq_compose_msi_msg	= pch_msi_compose_msi_msg,
+#ifdef CONFIG_IPIPE
+	.flags			= IRQCHIP_PIPELINE_SAFE,
+#endif
 };
 
 static int pch_msi_allocate_hwirq(unsigned int num_req, struct pch_msi_data *priv)
