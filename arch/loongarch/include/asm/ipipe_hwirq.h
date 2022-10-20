@@ -156,7 +156,7 @@ static inline void hard_local_irq_restore(unsigned long x)
 #define arch_local_irq_save()						\
 	({								\
 		unsigned long _flags;					\
-		_flags = ipipe_test_and_stall_root() << 7;		\
+		_flags = ~(ipipe_test_and_stall_root() << 2);		\
 		barrier();						\
 		_flags;							\
 	})
@@ -164,7 +164,7 @@ static inline void hard_local_irq_restore(unsigned long x)
 #define arch_local_save_flags()						\
 	({								\
 		unsigned long _flags;					\
-		_flags = ipipe_test_root() << 7;			\
+		_flags = ~(ipipe_test_root() << 2);			\
 		barrier();						\
 		_flags;							\
 	})
