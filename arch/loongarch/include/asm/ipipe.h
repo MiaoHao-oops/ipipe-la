@@ -91,7 +91,11 @@ struct ipipe_arch_sysinfo {
 extern char __ipipe_tsc_area[];
 void __ipipe_mach_get_tscinfo(struct __ipipe_tscinfo *info);
 
-unsigned long long __ipipe_mach_get_tsc(void);
+static inline notrace unsigned long long __ipipe_mach_get_tsc(void)
+{
+	return drdtime();
+}
+
 #define __ipipe_tsc_get() __ipipe_mach_get_tsc()
 void __ipipe_tsc_register(struct __ipipe_tscinfo *info);
 static inline void __ipipe_update_vsyscall(struct timekeeper *tk) {}
@@ -178,7 +182,7 @@ static inline unsigned long __ipipe_ffnz(unsigned long ul)
 	return __ffs(ul);
 }
 
-#define __ipipe_root_tick_p(regs) (!arch_irqs_disabled_flags(regs->csr_estat))
+#define __ipipe_root_tick_p(regs) (!arch_irqs_disabled_flags(regs->csr_prmd))
 
 #ifdef CONFIG_IRQ_DOMAIN
 static inline

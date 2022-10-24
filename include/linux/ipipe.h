@@ -334,8 +334,6 @@ static inline void __ipipe_sync_pipeline(struct ipipe_domain *top)
 	}
 	if (!test_bit(IPIPE_STALL_FLAG, &ipipe_this_cpu_context(top)->status))
 		__ipipe_sync_stage();
-	else
-		while (1) { ; }
 }
 
 void ipipe_register_head(struct ipipe_domain *ipd,
