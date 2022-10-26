@@ -18,7 +18,7 @@
 extern void enable_pcie_wakeup(void);
 static void machine_hang(void)
 {
-	local_irq_disable();
+	hard_local_irq_disable();
 
 	clear_csr_ecfg(ECFG0_IM);
 
@@ -27,7 +27,7 @@ static void machine_hang(void)
 
 	while (true) {
 		cpu_wait();
-		local_irq_disable();
+		hard_local_irq_disable();
 	}
 }
 

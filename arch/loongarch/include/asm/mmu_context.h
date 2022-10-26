@@ -124,9 +124,9 @@ static inline void switch_mm(struct mm_struct *prev, struct mm_struct *next,
 {
 	unsigned long flags;
 
-	local_irq_save(flags);
+	flags = hard_local_irq_save();
 	switch_mm_irqs_off(prev, next, tsk);
-	local_irq_restore(flags);
+	hard_local_irq_restore(flags);
 }
 
 /*
@@ -151,7 +151,7 @@ drop_mmu_context(struct mm_struct *mm, unsigned cpu)
 	unsigned long flags;
 	int pid;
 
-	local_irq_save(flags);
+	flags = hard_local_irq_save();
 
 	pid = read_csr_asid();
 	if ((pid & cpu_asid_mask(&current_cpu_data)) == (cpu_asid(cpu, mm))) {
@@ -174,7 +174,7 @@ drop_mmu_context(struct mm_struct *mm, unsigned cpu)
 	/* will get a new context next time */
 	cpu_context(cpu, mm) = 0;
 	cpumask_clear_cpu(cpu, mm_cpumask(mm));
-	local_irq_restore(flags);
+	hard_local_irq_restore(flags);
 }
 
 #ifdef CONFIG_IPIPE

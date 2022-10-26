@@ -201,7 +201,7 @@ static void extioi_irq_dispatch(struct irq_desc *desc)
 			int bit = __ffs(pending);
 			int virq = irq_linear_revmap(priv->extioi_domain,
 					bit + VEC_COUNT_PER_REG * i);
-			if (virq > 0) generic_handle_irq(virq);
+			if (virq > 0) ipipe_handle_demuxed_irq(virq);
 			pending &= ~BIT(bit);
 			handled = true;
 		}

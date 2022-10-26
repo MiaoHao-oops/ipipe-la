@@ -54,7 +54,7 @@ void local_flush_tlb_range(struct vm_area_struct *vma, unsigned long start,
 	if (asid_valid(mm, cpu)) {
 		unsigned long size, flags;
 
-		local_irq_save(flags);
+		flags = hard_local_irq_save();
 		start = round_down(start, PAGE_SIZE << 1);
 		end = round_up(end, PAGE_SIZE << 1);
 		size = (end - start) >> (PAGE_SHIFT + 1);
@@ -70,7 +70,7 @@ void local_flush_tlb_range(struct vm_area_struct *vma, unsigned long start,
 		} else {
 			drop_mmu_context(mm, cpu);
 		}
-		local_irq_restore(flags);
+		hard_local_irq_restore(flags);
 	} else {
 		cpumask_clear_cpu(cpu, mm_cpumask(mm));
 	}
@@ -80,7 +80,7 @@ void local_flush_tlb_kernel_range(unsigned long start, unsigned long end)
 {
 	unsigned long size, flags;
 
-	local_irq_save(flags);
+	flags = hard_local_irq_save();
 	size = (end - start + (PAGE_SIZE - 1)) >> PAGE_SHIFT;
 	size = (size + 1) >> 1;
 	if (size <= (current_cpu_data.tlbsizestlbsets ?
@@ -98,7 +98,7 @@ void local_flush_tlb_kernel_range(unsigned long start, unsigned long end)
 	} else {
 		invtlb_all_atomic(INVTLB_CURRENT_GTRUE, 0, 0);
 	}
-	local_irq_restore(flags);
+	hard_local_irq_restore(flags);
 }
 
 void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
@@ -132,7 +132,7 @@ static void __update_hugetlb(struct vm_area_struct *vma, unsigned long address, 
 	int idx;
 	unsigned long lo;
 
-	local_irq_save(flags);
+	flags = hard_local_irq_save();
 
 	address &= (PAGE_MASK << 1);
 	write_csr_entryhi(address);
@@ -149,7 +149,7 @@ static void __update_hugetlb(struct vm_area_struct *vma, unsigned long address, 
 	else
 		tlb_write_indexed();
 	write_csr_pagesize(PS_DEFAULT_SIZE);
-	local_irq_restore(flags);
+	hard_local_irq_restore(flags);
 }
 
 void __update_tlb(struct vm_area_struct *vma, unsigned long address, pte_t *ptep)
@@ -166,7 +166,7 @@ void __update_tlb(struct vm_area_struct *vma, unsigned long address, pte_t *ptep
 	if (pte_val(*ptep) & _PAGE_HUGE)
 		return __update_hugetlb(vma, address, ptep);
 
-	local_irq_save(flags);
+	flags = hard_local_irq_save();
 	if ((unsigned long)ptep & sizeof(pte_t))
 		ptep--;
 
@@ -181,7 +181,7 @@ void __update_tlb(struct vm_area_struct *vma, unsigned long address, pte_t *ptep
 		tlb_write_random();
 	else
 		tlb_write_indexed();
-	local_irq_restore(flags);
+	hard_local_irq_restore(flags);
 }
 
 #ifdef CONFIG_TRANSPARENT_HUGEPAGE
@@ -193,11 +193,11 @@ int has_transparent_hugepage(void)
 	if (size == -1) {	/* first call comes during __init */
 		unsigned long flags;
 
-		local_irq_save(flags);
+		flags = hard_local_irq_save();
 		write_csr_pagesize(PS_HUGE_SIZE);
 		size = read_csr_pagesize();
 		write_csr_pagesize(PS_DEFAULT_SIZE);
-		local_irq_restore(flags);
+		hard_local_irq_restore(flags);
 	}
 	return size == PS_HUGE_SIZE;
 }

@@ -127,6 +127,16 @@
 		LONG_S	zero, sp, PT_R0
 		cfi_st	$r4, PT_R4, \docfi
 		cfi_st	$r5, PT_R5, \docfi
+#ifdef CONFIG_IPIPE
+		// csrrd	t0, LOONGARCH_CSR_EUEN
+		// LONG_S	t0, sp, PT_EUEN
+		// csrrd	t0, LOONGARCH_CSR_ECFG
+		// LONG_S	t0, sp, PT_ECFG
+		csrrd	t0, LOONGARCH_CSR_ESTAT
+		LONG_S	t0, sp, PT_ESTAT
+		// csrrd	t0, LOONGARCH_CSR_BADV
+		// LONG_S	t0, sp, PT_BVADDR
+#endif
 		csrrd	t0, LOONGARCH_CSR_PRMD
 		LONG_S	t0, sp, PT_PRMD
 		cfi_st	$r6, PT_R6, \docfi

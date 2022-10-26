@@ -1010,7 +1010,10 @@ void __ipipe_ack_percpu_irq(struct irq_desc *desc)
 {
 	if (desc->irq_data.chip->irq_ack)
 		desc->irq_data.chip->irq_ack(&desc->irq_data);
+}
 
+void __ipipe_end_percpu_irq(struct irq_desc *desc)
+{
 	if (desc->irq_data.chip->irq_eoi)
 		desc->irq_data.chip->irq_eoi(&desc->irq_data);
 }
@@ -1064,7 +1067,7 @@ __fixup_irq_handler(struct irq_desc *desc, irq_flow_handler_t handle, int is_cha
 				desc->ipipe_end = __ipipe_end_fasteoi_irq;
 			} else {
 				desc->ipipe_ack = __ipipe_ack_percpu_irq;
-				desc->ipipe_end = __ipipe_nop_irq;
+				desc->ipipe_end = __ipipe_end_percpu_irq;
 			}
 		} else if (irq_desc_get_chip(desc) == &no_irq_chip) {
 			desc->ipipe_ack = __ipipe_nop_irq;

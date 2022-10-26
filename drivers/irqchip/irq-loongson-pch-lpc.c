@@ -118,7 +118,7 @@ static void pch_handle_irq(struct irq_desc *desc)
 
 	while (pending) {
 		int bit = __ffs(pending);
-		generic_handle_irq(bit);
+		ipipe_handle_demuxed_irq(bit);
 		pending &= ~BIT(bit);
 	}
 	chained_irq_exit(chip, desc);

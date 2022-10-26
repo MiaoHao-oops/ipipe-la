@@ -405,7 +405,7 @@ asmlinkage void do_fpe(struct pt_regs *regs, unsigned long fcsr)
 
 	/* Clear FCSR.Cause before enabling interrupts */
 	write_fcsr(LOONGARCH_FCSR0, fcsr & ~mask_fcsr_x(fcsr));
-	local_irq_enable();
+	hard_local_irq_enable();
 
 	die_if_kernel("FP exception in kernel code", regs);
 

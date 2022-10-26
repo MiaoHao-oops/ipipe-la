@@ -316,7 +316,7 @@ static void loongson3_init_secondary(void)
 static void loongson3_smp_finish(void)
 {
 
-	local_irq_enable();
+	hard_local_irq_enable();
 
 	iocsr_writeq(0, LOONGARCH_IOCSR_MBUF0);
 	pr_info("CPU#%d finished\n", smp_processor_id());
@@ -426,9 +426,9 @@ static int loongson3_cpu_disable(void)
 	numa_remove_cpu(cpu);
 	set_cpu_online(cpu, false);
 	calculate_cpu_foreign_map();
-	local_irq_save(flags);
+	flags = hard_local_irq_save();
 	fixup_irqs();
-	local_irq_restore(flags);
+	hard_local_irq_restore(flags);
 	local_flush_tlb_all();
 
 	return 0;
@@ -504,7 +504,7 @@ static void loongson3_play_dead(int *state_addr)
 	}
 
 	/* enable ipi interrupt*/
-	local_irq_enable();
+	hard_local_irq_enable();
 	set_csr_ecfg(ECFGF_IPI);
 
 	do {

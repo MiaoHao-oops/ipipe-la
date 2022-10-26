@@ -264,14 +264,14 @@ void *__init_or_module text_poke_early(union loongarch_instruction *insn,
 	unsigned long flags;
 	int i;
 
-	local_irq_save(flags);
+	flags = hard_local_irq_save();
 	wmb();
 
 	for (i = 0; i < nr; i++)
 		insn[i].word = buf[i].word;
 
 	wmb();
-	local_irq_restore(flags);
+	hard_local_irq_restore(flags);
 	flush_icache_range((unsigned long)insn, (unsigned long)(insn + nr));
 
 	return insn;

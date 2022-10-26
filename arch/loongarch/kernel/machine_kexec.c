@@ -75,7 +75,7 @@ static void kexec_shutdown_secondary(void *param)
 	/* We won't be sent IPIs any more. */
 	set_cpu_online(cpu, false);
 
-	local_irq_disable();
+	hard_local_irq_disable();
 	while (!atomic_read(&kexec_ready_to_reboot))
 		cpu_relax();
 
@@ -195,7 +195,7 @@ machine_kexec(struct kimage *image)
 	/*
 	 * we do not want to be bothered.
 	 */
-	local_irq_disable();
+	hard_local_irq_disable();
 
 	printk("Will call new kernel at %08lx\n", image->start);
 	printk("Bye ...\n");

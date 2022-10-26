@@ -166,7 +166,8 @@ good_area:
  * Fix it, but check if it's kernel or user first..
  */
 bad_area:
-	up_read(&mm->mmap_sem);
+	if (__ipipe_report_trap(IPIPE_TRAP_ACCESS, regs))
+		return;
 
 bad_area_nosemaphore:
 	/* User mode accesses just cause a SIGSEGV */
@@ -285,12 +286,81 @@ vmalloc_fault:
 #endif
 }
 
+#ifdef CONFIG_IPIPE
+/*
+ * We need to synchronize the virtual interrupt state with the hard
+ * interrupt state we received on entry, then turn hardirqs back on to
+ * allow code which does not require strict serialization to be
+ * preempted by an out-of-band activity.
+ *
+ * TRACING: the entry code already told lockdep and tracers about the
+ * hard interrupt state on entry to fault handlers, so no need to
+ * reflect changes to that state via calls to trace_hardirqs_*
+ * helpers. From the main kernel's point of view, there is no change.
+ */
+static inline
+unsigned long fault_entry(struct pt_regs *regs)
+{
+       unsigned long flags;
+       int nosync = 1;
+
+       flags = hard_local_irq_save();
+       if (irqs_disabled_flags(flags))
+               nosync = __test_and_set_bit(IPIPE_STALL_FLAG,
+                                           &__ipipe_root_status);
+       hard_local_irq_enable();
+
+       return arch_mangle_irq_bits(nosync, flags);
+}
+static inline void fault_exit(unsigned long flags)
+{
+       int nosync;
+
+       IPIPE_WARN_ONCE(hard_irqs_disabled());
+
+       /*
+        * '!nosync' here means that we had to turn on the stall bit
+        * in fault_entry() to mirror the hard interrupt state,
+        * because hard irqs were off but the stall bit was
+        * clear. Conversely, nosync in fault_exit() means that the
+        * stall bit state currently reflects the hard interrupt state
+        * we received on fault_entry().
+        */
+       nosync = arch_demangle_irq_bits(&flags);
+       if (!nosync) {
+               hard_local_irq_disable();
+               __clear_bit(IPIPE_STALL_FLAG, &__ipipe_root_status);
+               if (!hard_irqs_disabled_flags(flags))
+                       hard_local_irq_enable();
+       } else if (hard_irqs_disabled_flags(flags))
+               hard_local_irq_disable();
+}
+
+#else
+
+static inline unsigned long fault_entry(struct pt_regs *regs)
+{
+       return 0;
+}
+
+static inline void fault_exit(unsigned long x) { }
+#endif /* !CONFIG_IPIPE */
+
 asmlinkage void __kprobes do_page_fault(struct pt_regs *regs,
 	unsigned long write, unsigned long address)
 {
 	enum ctx_state prev_state;
+#ifdef CONFIG_IPIPE
+	unsigned long irqflags;
+	if (__ipipe_report_trap(IPIPE_TRAP_ACCESS, regs))
+		return;
 
+	irqflags = fault_entry(regs);
+#endif
 	prev_state = exception_enter();
 	__do_page_fault(regs, write, address);
 	exception_exit(prev_state);
+#ifdef CONFIG_IPIPE
+	fault_exit(irqflags);
+#endif
 }

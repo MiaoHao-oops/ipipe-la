@@ -26,7 +26,7 @@
 
 void __cpuidle cpu_wait(void)
 {
-	local_irq_enable();
+	hard_local_irq_enable();
 	__cpu_wait();
 }
 

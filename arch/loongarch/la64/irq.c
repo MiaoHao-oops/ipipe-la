@@ -128,7 +128,7 @@ void __init register_pch_pic(int id, u32 address, u32 irq_base)
 
 void handle_virq(unsigned int irq, unsigned int cpu)
 {
-	generic_handle_irq(irq);
+	ipipe_handle_demuxed_irq(irq);
 }
 
 void static pch_pic_domains_init(void)
@@ -359,8 +359,10 @@ void __init arch_init_irq(void)
 	/* machine specific irq init */
 	setup_IRQ();
 
+#ifdef CONFIG_PERF_EVENTS
 	/* override ipi vector for better performance */
 	set_vi_handler(EXCCODE_PC, pmu_handle_irq);
+#endif
 #ifdef CONFIG_SMP
 	set_vi_handler(EXCCODE_IPI, loongson3_ipi_interrupt);
 #endif

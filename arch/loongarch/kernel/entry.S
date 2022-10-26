@@ -75,7 +75,11 @@ need_resched:
 	LONG_L  t0, sp, PT_PRMD		# Interrupts off?
 	andi	t0, t0, CSR_CRMD_IE
 	beqz	t0, restore_all
+#ifdef CONFIG_IPIPE
+	bl	__ipipe_preempt_schedule_irq
+#else
 	bl	preempt_schedule_irq
+#endif
 	b	need_resched
 #endif
 
@@ -111,7 +115,7 @@ restore_all:				# restore full frame
 	RESTORE_TEMP
 	RESTORE_STATIC
 restore_partial:		# restore partial frame
-#ifdef CONFIG_TRACE_IRQFLAGS
+#if defined(CONFIG_TRACE_IRQFLAGS) && !defined(CONFIG_IPIPE)
 	SAVE_STATIC
 	SAVE_TEMP
 

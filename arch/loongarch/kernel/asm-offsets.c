@@ -85,6 +85,9 @@ void output_thread_info_defines(void)
 	COMMENT("LoongArch thread_info offsets.");
 	OFFSET(TI_TASK, thread_info, task);
 	OFFSET(TI_FLAGS, thread_info, flags);
+#ifdef CONFIG_IPIPE
+	OFFSET(TSK_TI_IPIPE, thread_info, ipipe_flags);
+#endif
 #ifdef CONFIG_CPU_HAS_LBT
 	OFFSET(TI_TP_VALUE, thread_info, tp_value);
 #endif

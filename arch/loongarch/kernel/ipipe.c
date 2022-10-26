@@ -276,10 +276,10 @@ asmlinkage void __ipipe_grab_irq(int irq, struct pt_regs *regs)
 			__ipipe_mach_hrtimer_debug(irq);
 #endif /* CONFIG_IPIPE_DEBUG_INTERNAL */
 	  copy_regs:
-		p->tick_regs.csr_estat =
+		p->tick_regs.csr_prmd =
 			(p->curr == &p->root
-			 ? regs->csr_estat
-			 : regs->csr_estat | LOONGARCH_CSR_ESTAT);
+			 ? regs->csr_prmd
+			 : regs->csr_prmd | ~CSR_PRMD_PIE);
 		p->tick_regs.csr_era = regs->csr_era;
 	}
 
@@ -292,11 +292,8 @@ asmlinkage void __ipipe_grab_irq(int irq, struct pt_regs *regs)
 
 static void __ipipe_do_IRQ(unsigned irq, void *cookie)
 {
-	// TODO: is it ok?
 	// NOTE: irq is Linux virtual irq number
-	// struct pt_regs *regs = raw_cpu_ptr(&ipipe_percpu.tick_regs);
-	// __handle_domain_irq(NULL, irq, false, regs);
-	generic_handle_irq(irq);
+	__handle_domain_irq(NULL, irq, false, raw_cpu_ptr(&ipipe_percpu.tick_regs));
 }
 
 void __ipipe_root_sync(void)

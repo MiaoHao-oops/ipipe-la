@@ -13,6 +13,7 @@
 #include <linux/string.h>
 #include <linux/extable.h>
 #include <asm-generic/extable.h>
+#include <asm-generic/ipipe.h>
 
 /*
  * The fs value determines whether argument validity checking should be
@@ -235,7 +236,7 @@ do {									\
 	int __gu_err = -EFAULT;						\
 	const __typeof__(*(ptr)) __user * __gu_ptr = (ptr);		\
 									\
-	might_fault();							\
+	__ipipe_uaccess_might_fault();					\
 	if (likely(access_ok(VERIFY_READ,  __gu_ptr, size))) {		\
 		__get_user_common((x), size, __gu_ptr);			\
 	} else								\
@@ -344,7 +345,7 @@ do {									\
 	__typeof__(*(ptr)) __pu_val = (x);				\
 	int __pu_err = -EFAULT;						\
 									\
-	might_fault();							\
+	__ipipe_uaccess_might_fault();					\
 	if (likely(access_ok(VERIFY_WRITE,  __pu_addr, size))) {	\
 		__put_user_common(__pu_addr, size);			\
 	}								\
@@ -445,7 +446,7 @@ strncpy_from_user(char *to, const char __user *from, long len)
 	if (!access_ok(VERIFY_READ, from, len))
 		return -EFAULT;
 
-	might_fault();
+	__ipipe_uaccess_might_fault();
 	return __strncpy_from_user(to, from, len);
 }
 
@@ -469,7 +470,7 @@ static inline long strnlen_user(const char __user *s, long n)
 	if (!access_ok(VERIFY_READ, s, 1))
 		return 0;
 
-	might_fault();
+	__ipipe_uaccess_might_fault();
 	return __strnlen_user(s, n);
 }
 

@@ -9,6 +9,8 @@
 
 #define NR_syscalls __NR_syscalls
 
+#define __LOONGARCH_ipipe_syscall       0x10000000
+
 /* for binary translation */
 #if defined(CONFIG_CPU_HAS_LBT)
 #define __ARCH_WANT_SYS_ALARM

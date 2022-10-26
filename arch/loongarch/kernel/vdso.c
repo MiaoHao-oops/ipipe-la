@@ -98,7 +98,7 @@ void update_vsyscall_cred(struct cred *cred)
 	unsigned long flags;
 	unsigned int cpu_id;
 
-	local_irq_save(flags);
+	flags = hard_local_irq_save();
 	cpu_id = (current_thread_info())->cpu;
 
 	if (cred->user_ns != &init_user_ns) {
@@ -108,7 +108,7 @@ void update_vsyscall_cred(struct cred *cred)
 	}
 
 	vdso_pcpu_data_update_seq(&vdso_data.pcpu_data[cpu_id]);
-	local_irq_restore(flags);
+	hard_local_irq_restore(flags);
 }
 
 void vdso_per_cpu_switch_thread(struct task_struct *prev,

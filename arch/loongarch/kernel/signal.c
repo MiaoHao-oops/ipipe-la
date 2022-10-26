@@ -733,24 +733,39 @@ static void do_signal(struct pt_regs *regs)
 asmlinkage void do_notify_resume(struct pt_regs *regs, void *unused,
 	__u32 thread_info_flags)
 {
-	local_irq_enable();
+#ifdef CONFIG_IPIPE
+	bool stalled = irqs_disabled();
+#endif
+	if (thread_info_flags & _TIF_NEED_RESCHED) {
+		if (IS_ENABLED(CONFIG_IPIPE)) {
+			local_irq_disable();
+			hard_local_irq_enable();
+		}
+	} else {
+		hard_local_irq_enable();
 
-	user_exit();
+		user_exit();
 
-	if (thread_info_flags & _TIF_UPROBE)
-		uprobe_notify_resume(regs);
+		if (thread_info_flags & _TIF_UPROBE)
+			uprobe_notify_resume(regs);
 
-	/* deal with pending signal delivery */
-	if (thread_info_flags & _TIF_SIGPENDING)
-		do_signal(regs);
+		/* deal with pending signal delivery */
+		if (thread_info_flags & _TIF_SIGPENDING)
+			do_signal(regs);
 
-	if (thread_info_flags & _TIF_NOTIFY_RESUME) {
-		clear_thread_flag(TIF_NOTIFY_RESUME);
-		tracehook_notify_resume(regs);
-		rseq_handle_notify_resume(NULL, regs);
+		if (thread_info_flags & _TIF_NOTIFY_RESUME) {
+			clear_thread_flag(TIF_NOTIFY_RESUME);
+			tracehook_notify_resume(regs);
+			rseq_handle_notify_resume(NULL, regs);
+		}
+
+		user_enter();
 	}
 
-	user_enter();
+#ifdef CONFIG_IPIPE    
+	if (IS_ENABLED(CONFIG_IPIPE) && stalled)
+		local_irq_disable();
+#endif
 }
 
 static int signal_setup(void)

@@ -58,7 +58,7 @@ unsigned __ipipe_processor_id(void);
 		register unsigned int r2 __asm__ ("r2");		\
 		register unsigned int r3 __asm__ ("r3");		\
 		register unsigned int ip __asm__ ("ip");		\
-		register unsigned int lr __asm__ ("ra");		\
+		register unsigned int ra __asm__ ("ra");		\
 		__asm__ __volatile__ ("\n"				\
 			"1:	bl __ipipe_processor_id\n"		\
 			"	.pushsection \".alt.smp.init\", \"a\"\n" \
@@ -66,7 +66,7 @@ unsigned __ipipe_processor_id(void);
 			"	mov	%0, #0\n"			\
 			"	.popsection"				\
 				: "=r"(cpunum),	"=r"(r1), "=r"(r2), "=r"(r3), \
-				  "=r"(ip), "=r"(lr)			\
+				  "=r"(ip), "=r"(ra)			\
 				: /* */ : "cc");			\
 		cpunum;						\
 	})

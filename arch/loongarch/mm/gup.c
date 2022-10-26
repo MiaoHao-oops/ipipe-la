@@ -213,7 +213,7 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
 	 * So long as we atomically load page table pointers versus teardown,
 	 * we can follow the address down to the page and take a ref on it.
 	 */
-	local_irq_save(flags);
+	flags = hard_local_irq_save();
 	pgdp = pgd_offset(mm, addr);
 	do {
 		pgd_t pgd = *pgdp;
@@ -224,7 +224,7 @@ int __get_user_pages_fast(unsigned long start, int nr_pages, int write,
 		if (!gup_pud_range(pgd, addr, next, write, pages, &nr))
 			break;
 	} while (pgdp++, addr = next, addr != end);
-	local_irq_restore(flags);
+	hard_local_irq_restore(flags);
 
 	return nr;
 }
@@ -263,7 +263,7 @@ int get_user_pages_fast(unsigned long start, int nr_pages, int write,
 		goto slow_irqon;
 
 	/* XXX: batch / limit 'nr' */
-	local_irq_disable();
+	hard_local_irq_disable();
 	pgdp = pgd_offset(mm, addr);
 	do {
 		pgd_t pgd = *pgdp;
@@ -274,12 +274,12 @@ int get_user_pages_fast(unsigned long start, int nr_pages, int write,
 		if (!gup_pud_range(pgd, addr, next, write, pages, &nr))
 			goto slow;
 	} while (pgdp++, addr = next, addr != end);
-	local_irq_enable();
+	hard_local_irq_enable();
 
 	VM_BUG_ON(nr != (end - start) >> PAGE_SHIFT);
 	return nr;
 slow:
-	local_irq_enable();
+	hard_local_irq_enable();
 
 slow_irqon:
 	/* Try to get the remaining pages with get_user_pages */
