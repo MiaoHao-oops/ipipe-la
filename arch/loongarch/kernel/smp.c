@@ -204,9 +204,6 @@ asmlinkage void start_secondary(void)
 	 * from __cpu_up
 	 */
 	complete(&cpu_running);
-#ifdef CONFIG_IPIPE
-	local_irq_enable();
-#endif
 
 	/*
 	 * irq will be enabled in ->smp_finish(), enabling it too early

@@ -55,8 +55,7 @@ asmlinkage void __weak plat_irq_dispatch(int irq)
 	 * by calling ipipe_handle_domain_irq()
 	 */
 #ifdef CONFIG_IPIPE
-	struct pt_regs *regs = get_irq_regs();
-	ipipe_handle_domain_irq(irq_domain, irq, regs);
+	ipipe_handle_domain_irq(irq_domain, irq, get_irq_regs());
 #else
 	unsigned int virq;
 	virq = irq_linear_revmap(irq_domain, irq);

@@ -137,6 +137,23 @@ loongson3_send_ipi_mask(const struct cpumask *mask, unsigned int action)
 		ipi_write_action(cpu_logical_map(i), (u32)action);
 }
 
+static inline void loongson3_handle_ipi(unsigned int cpu, unsigned int action)
+{
+	smp_mb();
+
+	if (action & SMP_RESCHEDULE) {
+		__inc_irq_stat(cpu, ipi_irqs[IPI_RESCHEDULE]);
+		scheduler_ipi();
+	}
+
+	if (action & SMP_CALL_FUNCTION) {
+		__inc_irq_stat(cpu, ipi_irqs[IPI_CALL_FUNC]);
+		irq_enter();
+		generic_smp_call_function_interrupt();
+		irq_exit();
+	}
+}
+
 #ifdef CONFIG_IPIPE
 
 static DEFINE_PER_CPU(unsigned long, ipi_messages);
@@ -151,9 +168,13 @@ static DEFINE_PER_CPU(unsigned long, ipi_messages);
 
 static void  __ipipe_do_IPI(unsigned int virq, void *cookie)
 {
-       unsigned int ipinr = virq - IPIPE_IPI_BASE;
+	unsigned int action;
+	unsigned int cpu = smp_processor_id();
 
-       loongson3_ipi_interrupt(ipinr);
+	virq = virq - IPIPE_IPI_BASE + 1;
+	action = 0x1 << virq;
+
+       loongson3_handle_ipi(cpu, action);
 }
 
 void __ipipe_ipis_alloc(void)
@@ -224,25 +245,9 @@ void ipipe_send_ipi(unsigned int ipi, cpumask_t cpumask)
 EXPORT_SYMBOL_GPL(ipipe_send_ipi);
 
  /* hw IRQs off */
-asmlinkage void __ipipe_grab_ipi(unsigned int sgi, struct pt_regs *regs)
+asmlinkage void __ipipe_grab_ipi(unsigned int irq, struct pt_regs *regs)
 {
-       unsigned int ipinr, irq;
-       unsigned long *pmsg;
-
-       if (sgi) {              /* SGI1-3, OOB messages. */
-               irq = sgi + NR_IPI - 1 + IPIPE_IPI_BASE;
-               __ipipe_dispatch_irq(irq, IPIPE_IRQF_NOACK);
-       } else {
-               /* In-band IPI (0..NR_IPI-1) multiplexed over SGI0. */
-               pmsg = raw_cpu_ptr(&ipi_messages);
-               while (*pmsg) {
-                       ipinr = ffs(*pmsg) - 1;
-                       clear_bit(ipinr, pmsg);
-                       irq = IPIPE_IPI_BASE + ipinr;
-                       __ipipe_dispatch_irq(irq, IPIPE_IRQF_NOACK);
-               }
-       }
-
+        __ipipe_dispatch_irq(irq, IPIPE_IRQF_NOACK);
        __ipipe_exit_irq(regs);
 }
 
@@ -263,29 +268,22 @@ void loongson3_ipi_interrupt(int irq)
 {
 	unsigned int action;
 	unsigned int cpu = smp_processor_id();
-#ifdef CONFIG_IPIPE
-	struct pt_regs *regs;
-        regs = raw_cpu_ptr(&ipipe_percpu.tick_regs);
-#endif
+	struct pt_regs *regs = get_irq_regs();
+
 	action = ipi_read_clear(cpu_logical_map(cpu));
-
-	smp_mb();
-
-	if (action & SMP_RESCHEDULE) {
-		__inc_irq_stat(cpu, ipi_irqs[IPI_RESCHEDULE]);
-		scheduler_ipi();
-	}
-
-	if (action & SMP_CALL_FUNCTION) {
-		__inc_irq_stat(cpu, ipi_irqs[IPI_CALL_FUNC]);
-		irq_enter();
-		generic_smp_call_function_interrupt();
-		irq_exit();
-	}
 #ifdef CONFIG_IPIPE
-        if(action == 1<<NR_IPI){
-                ipipe_handle_multi_ipi(action>>NR_IPI,regs);
-        }
+	irq = IPIPE_IPI_BASE;
+	// discard SMP_BOOT_CPU
+	action >>= 1;
+	while (irq - IPIPE_IPI_BASE < NR_IPI) {
+		if (action & 0x1) {
+			ipipe_handle_multi_ipi(irq, regs);
+		}
+		irq += 1;
+		action >>= 1;
+	}
+#else
+	loongson3_handle_ipi(cpu, action);
 #endif
 }
 

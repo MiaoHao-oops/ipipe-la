@@ -206,13 +206,6 @@ int ipipe_handle_domain_irq(struct irq_domain *domain,
 
 #define hard_smp_processor_id()		smp_processor_id()
 
-#ifdef CONFIG_SMP
-static inline void ipipe_handle_multi_ipi(int irq, struct pt_regs *regs)
-{
-	loongson3_ipi_interrupt(irq);
-}
-#endif /* CONFIG_SMP */
-
 struct timekeeper;
 static inline void __ipipe_update_vsyscall(struct timekeeper *tk) {}
 
