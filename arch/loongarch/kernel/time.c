@@ -49,12 +49,12 @@ static void loongarch_ipipe_itimer_ack(void)
 }
 
 static struct __ipipe_tscinfo tsc_info = {
-        .type = IPIPE_TSC_TYPE_FREERUNNING_ARCH,
-        .u = {
-                {
-                        .mask = 0xffffffffffffffff,
-                },
-        },
+	.type = IPIPE_TSC_TYPE_FREERUNNING_ARCH,
+	.u = {
+		{
+			.mask = 0xffffffffffffffff,
+		},
+	},
 };
 #endif /* CONFIG_IPIPE */
 
@@ -68,17 +68,17 @@ irqreturn_t constant_timer_interrupt(int irq, void *data)
 	int cpu = smp_processor_id();
 	struct clock_event_device *cd;
 #ifdef CONFIG_IPIPE
-       struct ipipe_timer *itimer = raw_cpu_ptr(&arch_itimer);
+	struct ipipe_timer *itimer = raw_cpu_ptr(&arch_itimer);
 #endif
 
 	/* Clear Timer Interrupt */
 	cd = &per_cpu(constant_clockevent_device, cpu);
 #ifdef CONFIG_IPIPE
-       if (clockevent_ipipe_stolen(cd))
-               goto stolen;
-       if (itimer->irq != irq)
-               itimer->irq = irq;
-stolen:                
+	if (clockevent_ipipe_stolen(cd))
+		goto stolen;
+	if (itimer->irq != irq)
+		itimer->irq = irq;
+stolen:
 #endif
 	write_csr_tintclear(CSR_TINTCLR_TI);
 	cd->event_handler(cd);
@@ -206,10 +206,10 @@ int constant_clockevent_init(void)
 	flags = irq_get_trigger_type(irq);
 	enable_percpu_irq(cd->irq,flags);
 
-        cd->ipipe_timer = raw_cpu_ptr(&arch_itimer);
-        cd->ipipe_timer->freq = const_clock_freq;
-        cd->ipipe_timer->irq = cd->irq;
-        cd->ipipe_timer->ack = loongarch_ipipe_itimer_ack;
+	cd->ipipe_timer = raw_cpu_ptr(&arch_itimer);
+	cd->ipipe_timer->freq = const_clock_freq;
+	cd->ipipe_timer->irq = cd->irq;
+	cd->ipipe_timer->ack = loongarch_ipipe_itimer_ack;
 #endif
 
 	clockevents_config_and_register(cd, const_clock_freq, min_delta, max_delta);
