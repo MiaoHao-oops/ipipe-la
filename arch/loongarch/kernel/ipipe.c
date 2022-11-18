@@ -245,18 +245,10 @@ void __ipipe_exit_irq(struct pt_regs *regs)
 		__ipipe_call_mayday(regs);
 }
 
-void printascii(const char *s);
 /* hw irqs off */
 asmlinkage void __ipipe_grab_irq(int irq, struct pt_regs *regs)
 {
 	struct ipipe_percpu_data *p = __ipipe_raw_cpu_ptr(&ipipe_percpu);
-
-#if 0
-	if (irq == 16)
-		printascii("*");
-	else
-		printascii("#");
-#endif
 
 	ipipe_trace_irq_entry(irq);
 
@@ -275,7 +267,7 @@ asmlinkage void __ipipe_grab_irq(int irq, struct pt_regs *regs)
 		if (__ipipe_mach_hrtimer_debug)
 			__ipipe_mach_hrtimer_debug(irq);
 #endif /* CONFIG_IPIPE_DEBUG_INTERNAL */
-	  copy_regs:
+	copy_regs:
 		p->tick_regs.csr_prmd =
 			(p->curr == &p->root
 			 ? regs->csr_prmd
