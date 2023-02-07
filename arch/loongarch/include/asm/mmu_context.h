@@ -7,6 +7,8 @@
 #ifndef _ASM_MMU_CONTEXT_H
 #define _ASM_MMU_CONTEXT_H
 
+#include <linux/ipipe_domain.h>
+
 #include <linux/errno.h>
 #include <linux/sched.h>
 #include <linux/mm_types.h>
@@ -166,7 +168,7 @@ drop_mmu_context(struct mm_struct *mm, unsigned cpu)
 		if (!(current->mm && (current->mm != mm))) {
 			get_new_mmu_context(mm, cpu);
 			write_csr_asid(cpu_asid(cpu, mm));
-			local_irq_restore(flags);
+			hard_local_irq_restore(flags);
 			return;
 		}
 	}
