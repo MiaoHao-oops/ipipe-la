@@ -82,10 +82,27 @@ SYM_FUNC_START(handle_sys)
 	bnez	t0, syscall_trace_entry
 
 syscall_common:
+#ifndef CONFIG_IPIPE
 	/* Check to make sure we don't jump to a bogus syscall number. */
 	li.w	t0, __NR_syscalls
 	sub.d	t2, a7, t0
 	bgez	t2, illegal_syscall
+#else
+	/* save syscall number(a7) in thread_info->syscall */
+	LONG_S	a7, tp, TI_SYSCALL
+	addi.d	a0, tp, 0
+	addi.d	a1, a7, 0
+	addi.d	a2, sp, 0
+	bl	ipipe_handle_syscall
+
+	/* TODO: how to check illegal syscalls? */
+	bnez	a0, n64_syscall_finish
+
+	/* restore a0, a1, a2 from kernel stack */
+	cfi_ld	a0, PT_R4, 1
+	cfi_ld	a1, PT_R5, 1
+	cfi_ld	a2, PT_R6, 1
+#endif
 
 	/* Syscall number held in a7 */
 	slli.d	t0, a7, 3		# offset into table
@@ -96,6 +113,9 @@ syscall_common:
 
 	jalr	t2			# Do The Real Thing (TM)
 
+#ifdef CONFIG_IPIPE
+n64_syscall_finish:
+#endif
 	ld.d	t1, sp, PT_R11		# syscall number
 	addi.d	t1, t1, 1		# +1 for handle_signal
 	st.d	t1, sp, PT_R0		# save it for syscall restarting
