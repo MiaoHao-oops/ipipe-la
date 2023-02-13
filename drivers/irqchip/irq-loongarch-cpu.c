@@ -3,6 +3,7 @@
  * Copyright (C) 2020 Loongson Technologies, Inc.
  */
 
+#include "linux/ipipe.h"
 #include <linux/init.h>
 #include <linux/interrupt.h>
 #include <linux/kernel.h>
@@ -20,19 +21,55 @@
 static struct irq_domain *irq_domain;
 static struct fwnode_handle *irq_fwnode;
 
+#ifdef CONFIG_IPIPE
+#define pipeline_lock(__flags)		do { (__flags) = hard_local_irq_save(); } while (0)
+#define pipeline_unlock(__flags)	hard_local_irq_restore(__flags)
+#else
+#define pipeline_lock(__flags)		do { (void)__flags; } while (0)
+#define pipeline_unlock(__flags)	do { (void)__flags; } while (0)
+#endif
+
 struct fwnode_handle *coreintc_get_fwnode(void)
 {
 	return irq_fwnode;
 }
 static inline void unmask_loongarch_irq(struct irq_data *d)
 {
+	unsigned int flags;
+
+	pipeline_lock(flags);
+	ipipe_lock_irq(d->irq);
 	set_csr_ecfg(ECFGF(d->hwirq));
+	pipeline_unlock(flags);
 }
 
 static inline void mask_loongarch_irq(struct irq_data *d)
 {
+	unsigned int flags;
+
+	pipeline_lock(flags);
 	clear_csr_ecfg(ECFGF(d->hwirq));
+	ipipe_unlock_irq(d->irq);
+	pipeline_unlock(flags);
 }
+
+#ifdef CONFIG_IPIPE
+static void eoi_loongarch_irq(struct irq_data *d)
+{
+
+}
+
+static void hold_loongarch_irq(struct irq_data *d)
+{
+	clear_csr_ecfg(ECFGF(d->hwirq));
+	eoi_loongarch_irq(d);
+}
+
+static void release_loongarch_irq(struct irq_data *d)
+{
+	set_csr_ecfg(ECFGF(d->hwirq));
+}
+#endif
 
 static struct irq_chip loongarch_cpu_irq_controller = {
 	.name		= "COREINTC",
@@ -41,6 +78,11 @@ static struct irq_chip loongarch_cpu_irq_controller = {
 	.irq_mask_ack	= mask_loongarch_irq,
 	.irq_unmask	= unmask_loongarch_irq,
 	.irq_eoi	= unmask_loongarch_irq,
+#ifndef CONFIG_IPIPE
+#else
+	.irq_hold	= hold_loongarch_irq,
+	.irq_release	= release_loongarch_irq,
+#endif
 	.irq_disable	= mask_loongarch_irq,
 	.irq_enable	= unmask_loongarch_irq,
 #ifdef CONFIG_IPIPE
