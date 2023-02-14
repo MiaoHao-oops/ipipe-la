@@ -51,8 +51,8 @@ struct thread_info {
 	unsigned long		last_waittime;
 #ifdef CONFIG_IPIPE
 	unsigned long 		ipipe_flags;
-	struct ipipe_threadinfo	ipipe_data;
 #endif
+	struct ipipe_threadinfo	ipipe_data;
 };
 
 /*
