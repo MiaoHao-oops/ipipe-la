@@ -41,6 +41,7 @@
 #include <linux/irq.h>
 #include <linux/irqnr.h>
 #include <linux/prefetch.h>
+#include <linux/timer.h>
 #include <linux/cpu.h>
 #include <linux/ipipe_domain.h>
 #include <linux/ipipe_tickdev.h>
@@ -130,6 +131,44 @@ int ipipe_set_irq_affinity(unsigned int irq, cpumask_t cpumask)
 }
 EXPORT_SYMBOL_GPL(ipipe_set_irq_affinity);
 
+void __ipipe_send_vnmi(void (*fn)(void *), cpumask_t cpumask, void *arg)
+{
+	struct __ipipe_vnmidata data;
+	unsigned long flags;
+	int cpu;
+
+	data.fn = fn;
+	data.arg = arg;
+	data.cpumask = cpumask;
+
+	while (!spin_trylock_irqsave(&__ipipe_vnmi.lock, flags)) {
+		if (hard_irqs_disabled())
+			__ipipe_do_vnmi(IPIPE_SERVICE_VNMI, NULL);
+		cpu_relax();
+	}
+
+	cpu = ipipe_processor_id();
+	cpumask_clear_cpu(cpu, &data.cpumask);
+	if (cpumask_empty(&data.cpumask)) {
+		spin_unlock_irqrestore(&__ipipe_vnmi.lock, flags);
+		return;
+	}
+
+	write_lock(&__ipipe_vnmi.data_lock);
+	__ipipe_vnmi.data = &data;
+	write_unlock(&__ipipe_vnmi.data_lock);
+
+	ipipe_send_ipi(IPIPE_SERVICE_VNMI, data.cpumask);
+	while (!cpumask_empty(&data.cpumask))
+		cpu_relax();
+
+	write_lock(&__ipipe_vnmi.data_lock);
+	__ipipe_vnmi.data = NULL;
+	write_unlock(&__ipipe_vnmi.data_lock);
+
+	spin_unlock_irqrestore(&__ipipe_vnmi.lock, flags);
+}
+EXPORT_SYMBOL_GPL(__ipipe_send_vnmi);
 #endif	/* CONFIG_SMP */
 
 #ifdef CONFIG_SMP_ON_UP
@@ -171,7 +210,7 @@ void __init __ipipe_tsc_register(struct __ipipe_tscinfo *info)
 
 __weak void __ipipe_mach_get_tscinfo(struct __ipipe_tscinfo *info)
 {
-	info->type = IPIPE_TSC_TYPE_NONE;
+	info = &tsc_info;
 }
 
 int ipipe_get_sysinfo(struct ipipe_sysinfo *info)
