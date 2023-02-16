@@ -7,8 +7,6 @@
 #ifndef _ASM_MMU_CONTEXT_H
 #define _ASM_MMU_CONTEXT_H
 
-#include <linux/ipipe_domain.h>
-
 #include <linux/errno.h>
 #include <linux/sched.h>
 #include <linux/mm_types.h>

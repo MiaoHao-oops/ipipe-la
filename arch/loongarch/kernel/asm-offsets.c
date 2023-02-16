@@ -4,6 +4,7 @@
  *
  * Copyright (C) 2020 Loongson Technologies, Inc.
  */
+#include <asm/thread_info.h>
 #include <linux/compat.h>
 #include <linux/types.h>
 #include <linux/sched.h>
@@ -87,6 +88,7 @@ void output_thread_info_defines(void)
 	OFFSET(TI_FLAGS, thread_info, flags);
 #ifdef CONFIG_IPIPE
 	OFFSET(TSK_TI_IPIPE, thread_info, ipipe_flags);
+	OFFSET(TI_SYSCALL, thread_info, syscall);
 #endif
 #ifdef CONFIG_CPU_HAS_LBT
 	OFFSET(TI_TP_VALUE, thread_info, tp_value);

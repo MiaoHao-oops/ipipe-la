@@ -98,7 +98,7 @@ syscall_common:
 	/* TODO: how to check illegal syscalls? */
 	bnez	a0, n64_syscall_finish
 
-	/* restore a0, a1, a2 from kernel stack */
+	/* restore a0, a1, a2 from kernel stack to do routine syscall */
 	cfi_ld	a0, PT_R4, 1
 	cfi_ld	a1, PT_R5, 1
 	cfi_ld	a2, PT_R6, 1
@@ -113,13 +113,13 @@ syscall_common:
 
 	jalr	t2			# Do The Real Thing (TM)
 
+	st.d	v0, sp, PT_R4		# result
 #ifdef CONFIG_IPIPE
 n64_syscall_finish:
 #endif
 	ld.d	t1, sp, PT_R11		# syscall number
 	addi.d	t1, t1, 1		# +1 for handle_signal
 	st.d	t1, sp, PT_R0		# save it for syscall restarting
-	st.d	v0, sp, PT_R4		# result
 
 n64_syscall_exit:
 	NOT_SIBLING_CALL_HINT
