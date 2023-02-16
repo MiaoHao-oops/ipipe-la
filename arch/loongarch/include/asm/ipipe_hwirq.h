@@ -176,13 +176,13 @@ static inline unsigned long arch_mangle_irq_bits(int virt, unsigned long real)
 {
 	/* Merge virtual and real interrupt mask bits into a single
 	   32bit word. */
-	return (real & ~(1L << 8)) | ((virt != 0) << 8);
+	return (real & ~(1L << 10)) | ((virt != 0) << 10);
 }
 
 static inline int arch_demangle_irq_bits(unsigned long *x)
 {
-	int virt = (*x & (1 << 8)) != 0;
-	*x &= ~(1L << 8);
+	int virt = (*x & (1 << 10)) != 0;
+	*x &= ~(1L << 10);
 	return virt;
 }
 
