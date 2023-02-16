@@ -91,6 +91,8 @@ struct ipipe_arch_sysinfo {
 extern char __ipipe_tsc_area[];
 void __ipipe_mach_get_tscinfo(struct __ipipe_tscinfo *info);
 
+static inline void __ipipe_mach_update_tsc(void) {}
+
 static inline notrace unsigned long long __ipipe_mach_get_tsc(void)
 {
 	return drdtime();
@@ -98,7 +100,7 @@ static inline notrace unsigned long long __ipipe_mach_get_tsc(void)
 
 #define __ipipe_tsc_get() __ipipe_mach_get_tsc()
 void __ipipe_tsc_register(struct __ipipe_tscinfo *info);
-static inline void __ipipe_update_vsyscall(struct timekeeper *tk) {}
+static inline void __ipipe_tsc_update(void) {}
 #ifndef __ipipe_hrclock_freq
 extern unsigned long __ipipe_hrtimer_freq;
 #define __ipipe_hrclock_freq __ipipe_hrtimer_freq
@@ -205,6 +207,13 @@ int ipipe_handle_domain_irq(struct irq_domain *domain,
 #define __ipipe_tsc_update()	do { } while(0)
 
 #define hard_smp_processor_id()		smp_processor_id()
+
+#ifdef CONFIG_SMP
+// static inline void ipipe_handle_multi_ipi(int irq, struct pt_regs *regs)
+// {
+// 	handle_IPI(irq, regs);
+// }
+#endif /* CONFIG_SMP */
 
 struct timekeeper;
 static inline void __ipipe_update_vsyscall(struct timekeeper *tk) {}

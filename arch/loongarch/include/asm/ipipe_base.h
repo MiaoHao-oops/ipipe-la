@@ -30,7 +30,7 @@
 
 #include <asm/hardirq.h>
 
-#define IPIPE_NR_ROOT_IRQS	1024
+#define IPIPE_NR_ROOT_IRQS	NR_IRQS
 
 #define IPIPE_NR_XIRQS		IPIPE_NR_ROOT_IRQS
 
@@ -40,7 +40,7 @@
  * multiplexed over SGI0 like regular in-band messages.
  */
 #define IPIPE_IPI_BASE         IPIPE_VIRQ_BASE
-#define IPIPE_OOB_IPI_NR       3
+#define IPIPE_OOB_IPI_NR	4
 #define IPIPE_CRITICAL_IPI     (IPIPE_IPI_BASE + NR_IPI)
 #define IPIPE_HRTIMER_IPI      (IPIPE_IPI_BASE + NR_IPI + 1)
 #define IPIPE_RESCHEDULE_IPI   (IPIPE_IPI_BASE + NR_IPI + 2)
