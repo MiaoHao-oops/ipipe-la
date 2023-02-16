@@ -58,8 +58,12 @@ static void mask_lpc_irq(struct irq_data *d)
 
 static void mask_ack_lpc_irq(struct irq_data *d)
 {
-	mask_lpc_irq(d);
-	ack_lpc_irq(d);
+	unsigned long flags;
+
+	raw_spin_lock_irqsave(&pch_lpc_priv->lpc_lock, flags);
+	writel(readl(pch_lpc_priv->base + LPC_INT_ENA) & (~(0x1 << (d->irq))), pch_lpc_priv->base + LPC_INT_ENA);
+	writel(0x1 << d->irq, pch_lpc_priv->base + LPC_INT_CLR);
+	raw_spin_unlock_irqrestore(&pch_lpc_priv->lpc_lock, flags);
 }
 static void unmask_lpc_irq(struct irq_data *d)
 {
