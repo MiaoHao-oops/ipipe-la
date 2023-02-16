@@ -290,6 +290,12 @@ static inline void fixup_percpu_data(void) { }
 
 #endif /* CONFIG_SMP */
 
+/**
+ * __ipipe_init_early - early initialize interrupt pipeline
+ *
+ * initialize root domain lightweightly and register printk and 
+ * work irq in root domain ipipe irqdesc list.
+ */
 void __init __ipipe_init_early(void)
 {
 	struct ipipe_domain *ipd = &ipipe_root;
@@ -333,6 +339,11 @@ void __init __ipipe_init_early(void)
 		per_cpu(work_tail, cpu) = per_cpu(work_buf, cpu);
 }
 
+/**
+ * __ipipe_init - initialize interrupt pipeline
+ * 
+ * call architecture specified pipeline init function.
+ */
 void __init __ipipe_init(void)
 {
 	/* Now we may engage the pipeline. */
@@ -386,6 +397,11 @@ void ipipe_unregister_head(struct ipipe_domain *ipd)
 }
 EXPORT_SYMBOL_GPL(ipipe_unregister_head);
 
+/**
+ * ipipe_stall_root - stall root domain
+ * 
+ * stall root domain by setting virtual IPIPE_STALL_FLAG
+ */
 void ipipe_stall_root(void)
 {
 	unsigned long flags;
@@ -397,6 +413,13 @@ void ipipe_stall_root(void)
 }
 EXPORT_SYMBOL(ipipe_stall_root);
 
+/**
+ * ipipe_test_and_stall_root - stall root domain and return its old status
+ * 
+ * stall root domain by setting virtual IPIPE_STALL_FLAG, and return its
+ * old status if IPIPE_STALL_FLAG bit
+ * @return unsigned long - root domain's old status
+ */
 unsigned long ipipe_test_and_stall_root(void)
 {
 	unsigned long flags;
@@ -411,6 +434,11 @@ unsigned long ipipe_test_and_stall_root(void)
 }
 EXPORT_SYMBOL(ipipe_test_and_stall_root);
 
+/**
+ * ipipe_test_root - get the stall status of root domain
+ * 
+ * @return unsigned long - the stall status of root domain
+ */
 unsigned long ipipe_test_root(void)
 {
 	unsigned long flags;
@@ -424,6 +452,12 @@ unsigned long ipipe_test_root(void)
 }
 EXPORT_SYMBOL(ipipe_test_root);
 
+/**
+ * ipipe_unstall_root - unstall root domain
+ * 
+ * clear the IPIPE_STALL_FLAG of root domain, sync root domain
+ * and enable hard local irq.
+ */
 void ipipe_unstall_root(void)
 {
 	struct ipipe_percpu_domain_data *p;
@@ -873,6 +907,14 @@ static inline int __ipipe_next_irq(struct ipipe_percpu_domain_data *p)
 #else /* __IPIPE_IRQMAP_LEVELS == 2 */
 
 /* Must be called hw IRQs off. */
+/**
+ * __ipipe_set_irq_pending - set specified irq pending bit
+ * 
+ * @param ipd - current ipipe domain 
+ * @param irq - virtual irq number
+ * 
+ * set the correspongding bit in irqpend_*map.
+ */
 void __ipipe_set_irq_pending(struct ipipe_domain *ipd, unsigned int irq)
 {
 	struct ipipe_percpu_domain_data *p = ipipe_this_cpu_context(ipd);
@@ -934,6 +976,12 @@ void __ipipe_unlock_irq(unsigned int irq)
 }
 EXPORT_SYMBOL_GPL(__ipipe_unlock_irq);
 
+/**
+ * __ipipe_next_irq - get next pending irq in irqpend_*map
+ * 
+ * @param p - current ipipe_percpu_domain_data
+ * @return int - next virtual irq number
+ */
 static inline int __ipipe_next_irq(struct ipipe_percpu_domain_data *p)
 {
 	unsigned long l0m, l1m;
