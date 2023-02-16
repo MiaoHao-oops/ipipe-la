@@ -58,6 +58,8 @@ static void mask_lpc_irq(struct irq_data *d)
 
 static void mask_ack_lpc_irq(struct irq_data *d)
 {
+	mask_lpc_irq(d);
+	ack_lpc_irq(d);
 }
 static void unmask_lpc_irq(struct irq_data *d)
 {
