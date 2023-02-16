@@ -26,13 +26,16 @@
 
 void __cpuidle cpu_wait(void)
 {
-	hard_local_irq_enable();
+	// no booting blocked, very critical
+	local_irq_enable();
 	__cpu_wait();
 }
 
 void arch_cpu_idle(void)
 {
 	cpu_wait();
+	// no idle warning
+	local_irq_enable_full();
 }
 
 #ifdef CONFIG_CPU_IDLE
