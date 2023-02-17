@@ -1296,6 +1296,8 @@ void add_interrupt_randomness(int irq, int irq_flags)
 
 	fast_pool->count = 0;
 
+	printk("%s: irq = %d", __func__, irq);
+
 	/* award one bit for the contents of the fast pool */
 	credit_entropy_bits(r, credit + 1);
 }
@@ -1723,7 +1725,6 @@ int wait_for_random_bytes(void)
 
 	do {
 		int ret;
-		pr_notice("CPU#%d %s: %d waiting for crng ready", smp_processor_id(), __func__, current_thread_info()->task->pid);
 		ret = wait_event_interruptible_timeout(crng_init_wait, crng_ready(), HZ);
 		if (ret)
 			return ret > 0 ? 0 : ret;
