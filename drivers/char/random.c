@@ -238,6 +238,9 @@
  * Eastlake, Steve Crocker, and Jeff Schiller.
  */
 
+#include "asm/thread_info.h"
+#include "linux/printk.h"
+#include "linux/smp.h"
 #include <linux/utsname.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -1720,6 +1723,7 @@ int wait_for_random_bytes(void)
 
 	do {
 		int ret;
+		pr_notice("CPU#%d %s: %d waiting for crng ready", smp_processor_id(), __func__, current_thread_info()->task->pid);
 		ret = wait_event_interruptible_timeout(crng_init_wait, crng_ready(), HZ);
 		if (ret)
 			return ret > 0 ? 0 : ret;
