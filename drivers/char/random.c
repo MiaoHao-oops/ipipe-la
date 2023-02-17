@@ -1963,6 +1963,7 @@ urandom_read(struct file *file, char __user *buf, size_t nbytes, loff_t *ppos)
 		spin_lock_irqsave(&primary_crng.lock, flags);
 		crng_init_cnt = 0;
 		spin_unlock_irqrestore(&primary_crng.lock, flags);
+		dump_stack();
 	}
 	nbytes = min_t(size_t, nbytes, INT_MAX >> (ENTROPY_SHIFT + 3));
 	ret = extract_crng_user(buf, nbytes);
