@@ -54,21 +54,21 @@ static inline void mask_loongarch_irq(struct irq_data *d)
 }
 
 #ifdef CONFIG_IPIPE
-static void eoi_loongarch_irq(struct irq_data *d)
-{
+// static void eoi_loongarch_irq(struct irq_data *d)
+// {
 
-}
+// }
 
-static void hold_loongarch_irq(struct irq_data *d)
-{
-	clear_csr_ecfg(ECFGF(d->hwirq));
-	eoi_loongarch_irq(d);
-}
+// static void hold_loongarch_irq(struct irq_data *d)
+// {
+// 	clear_csr_ecfg(ECFGF(d->hwirq));
+// 	eoi_loongarch_irq(d);
+// }
 
-static void release_loongarch_irq(struct irq_data *d)
-{
-	set_csr_ecfg(ECFGF(d->hwirq));
-}
+// static void release_loongarch_irq(struct irq_data *d)
+// {
+// 	set_csr_ecfg(ECFGF(d->hwirq));
+// }
 #endif
 
 static struct irq_chip loongarch_cpu_irq_controller = {
@@ -80,8 +80,8 @@ static struct irq_chip loongarch_cpu_irq_controller = {
 	.irq_eoi	= unmask_loongarch_irq,
 #ifndef CONFIG_IPIPE
 #else
-	.irq_hold	= hold_loongarch_irq,
-	.irq_release	= release_loongarch_irq,
+	// .irq_hold	= hold_loongarch_irq,
+	// .irq_release	= release_loongarch_irq,
 #endif
 	.irq_disable	= mask_loongarch_irq,
 	.irq_enable	= unmask_loongarch_irq,
