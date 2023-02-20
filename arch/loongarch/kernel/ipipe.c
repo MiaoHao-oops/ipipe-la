@@ -116,6 +116,7 @@ void __ipipe_hook_critical_ipi(struct ipipe_domain *ipd)
 {
 	__ipipe_ipis_alloc();
 	hook_internal_ipi(ipd, IPIPE_CRITICAL_IPI, __ipipe_do_critical_sync);
+	hook_internal_ipi(ipd, IPIPE_SERVICE_VNMI, __ipipe_do_vnmi);
 }
 
 int ipipe_set_irq_affinity(unsigned int irq, cpumask_t cpumask)

@@ -17,6 +17,7 @@
  */
 
 #include <linux/init.h>
+#include <linux/ipipe.h>
 #include <linux/cpu.h>
 #include <linux/sched.h>
 #include <linux/sched/hotplug.h>
@@ -246,7 +247,11 @@ EXPORT_SYMBOL_GPL(ipipe_send_ipi);
  /* hw IRQs off */
 asmlinkage void __ipipe_grab_ipi(unsigned int irq, struct pt_regs *regs)
 {
-	__ipipe_dispatch_irq(irq, IPIPE_IRQF_NOACK);
+	if (irq == IPIPE_SERVICE_VNMI && __ipipe_root_p)
+		__ipipe_do_vnmi(IPIPE_SERVICE_VNMI, NULL);
+	else
+		__ipipe_dispatch_irq(irq, IPIPE_IRQF_NOACK);
+	
 	__ipipe_exit_irq(regs);
 }
 
