@@ -741,8 +741,6 @@ asmlinkage void do_notify_resume(struct pt_regs *regs, void *unused,
 			local_irq_disable();
 			hard_local_irq_enable();
 		}
-
-		schedule();
 	} else {
 		hard_local_irq_enable();
 
