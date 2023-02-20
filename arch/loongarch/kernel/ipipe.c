@@ -7,6 +7,7 @@
  * Copyright (C) 2005 Stelian Pop.
  * Copyright (C) 2006-2008 Gilles Chanteperdrix.
  * Copyright (C) 2010 Philippe Gerum (SMP port).
+ * Copyright (C) 2022 Miao Hao (LoongArch port).
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * Architecture-dependent I-PIPE support for ARM.
+ * Architecture-dependent I-PIPE support for LoongArch.
  */
 
 #include <linux/kernel.h>
