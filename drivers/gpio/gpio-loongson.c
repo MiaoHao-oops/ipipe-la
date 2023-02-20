@@ -13,6 +13,7 @@
 #include <linux/acpi.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
+#include <linux/ipipe.h>
 #include <linux/module.h>
 #include <linux/spinlock.h>
 #include <linux/err.h>
@@ -32,7 +33,7 @@
 
 struct loongson_gpio_chip {
 	struct gpio_chip	chip;
-	spinlock_t		lock;
+	ipipe_spinlock_t		lock;
 	void __iomem		*base;
 	int conf_offset;
 	int out_offset;

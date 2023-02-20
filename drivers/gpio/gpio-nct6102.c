@@ -1,5 +1,6 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
+#include <linux/ipipe.h>
 #include <linux/module.h>
 #include <linux/spinlock.h>
 #include <linux/err.h>
@@ -20,7 +21,7 @@
 #define SIO_GPIO_DATA		0xE9	/* GP2x data register */
 #define NCT6102_GPIO_BASE 	80
 
-static DEFINE_SPINLOCK(gpio_lock);
+static IPIPE_DEFINE_SPINLOCK(gpio_lock);
 
 /*
  read/write_gbl() is used to read/write Global register.
