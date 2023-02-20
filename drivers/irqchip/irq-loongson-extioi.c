@@ -7,6 +7,7 @@
 #define pr_fmt(fmt) "extioi: " fmt
 
 #include <linux/interrupt.h>
+#include <linux/ipipe.h>
 #include <linux/irq.h>
 #include <linux/irqchip.h>
 #include <linux/irqdomain.h>
@@ -86,7 +87,7 @@ static void extioi_set_irq_route(int pos, unsigned int cpu, nodemask_t *node_map
 
 }
 
-static DEFINE_SPINLOCK(affinity_lock);
+static IPIPE_DEFINE_SPINLOCK(affinity_lock);
 int ext_set_irq_affinity(struct irq_data *d, const struct cpumask *affinity,
 			  bool force)
 {
