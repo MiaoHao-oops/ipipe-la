@@ -12,9 +12,10 @@
 
 #include <linux/clockchips.h>
 #include <linux/clocksource.h>
+#include <linux/ipipe.h>
 #include <asm/loongarchregs.h>
 
-extern spinlock_t rtc_lock;
+extern ipipe_spinlock_t rtc_lock;
 
 extern u64 cpu_clock_freq;
 extern u64 const_clock_freq;
