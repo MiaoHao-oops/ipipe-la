@@ -49,7 +49,11 @@ static struct pch_pic {
 	int			model;
 	int			gsi_end;
 	int			gsi_base;
+#ifdef CONFIG_IPIPE
+	ipipe_spinlock_t	pic_lock;
+#else
 	raw_spinlock_t		pic_lock;
+#endif
 } *pch_pic_priv[MAX_PCH_PICS];
 
 u32 pchintc_gsi_base(int id)
