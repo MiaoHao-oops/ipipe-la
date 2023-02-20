@@ -9,6 +9,7 @@
  * Free Software Foundation;  either version 2 of the  License, or (at your
  * option) any later version.
  */
+#include "linux/ipipe_lock.h"
 #include <linux/clockchips.h>
 #include <linux/export.h>
 #include <linux/init.h>
@@ -37,7 +38,7 @@ EXPORT_SYMBOL(cpu_clock_freq);
 u64 const_clock_freq;
 EXPORT_SYMBOL(const_clock_freq);
 
-static DEFINE_SPINLOCK(state_lock);
+static IPIPE_DEFINE_SPINLOCK(state_lock);
 static DEFINE_PER_CPU(struct clock_event_device, constant_clockevent_device);
 
 #ifdef CONFIG_IPIPE
