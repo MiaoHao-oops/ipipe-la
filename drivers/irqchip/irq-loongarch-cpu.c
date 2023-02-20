@@ -77,8 +77,8 @@ static struct irq_chip loongarch_cpu_irq_controller = {
 	.irq_mask	= mask_loongarch_irq,
 	.irq_mask_ack	= mask_loongarch_irq,
 	.irq_unmask	= unmask_loongarch_irq,
-	.irq_eoi	= unmask_loongarch_irq,
 #ifndef CONFIG_IPIPE
+	.irq_eoi	= unmask_loongarch_irq,
 #else
 	.irq_hold	= hold_loongarch_irq,
 	.irq_release	= release_loongarch_irq,
