@@ -29,7 +29,7 @@
 #include <asm/ipipe.h>
 #endif
 
-DEFINE_SPINLOCK(rtc_lock);
+IPIPE_DEFINE_SPINLOCK(rtc_lock);
 EXPORT_SYMBOL(rtc_lock);
 
 u64 cpu_clock_freq;
