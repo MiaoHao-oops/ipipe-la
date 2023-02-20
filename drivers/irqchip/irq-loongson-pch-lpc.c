@@ -7,6 +7,7 @@
 #define pr_fmt(fmt) "lpc: " fmt
 
 #include <linux/interrupt.h>
+#include <linux/ipipe.h>
 #include <linux/irq.h>
 #include <linux/irqchip.h>
 #include <linux/irqchip/chained_irq.h>
@@ -31,7 +32,11 @@ struct pch_lpc {
 	u32			saved_reg_ctl;
 	u32			saved_reg_ena;
 	u32			saved_reg_pol;
+#ifdef CONFIG_IPIPE
+	ipipe_spinlock_t	lpc_lock;
+#else
 	raw_spinlock_t		lpc_lock;
+#endif
 } *pch_lpc_priv;
 
 struct fwnode_handle *pch_lpc_get_fwnode(void)
