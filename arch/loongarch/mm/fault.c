@@ -350,17 +350,16 @@ asmlinkage void __kprobes do_page_fault(struct pt_regs *regs,
 	unsigned long write, unsigned long address)
 {
 	enum ctx_state prev_state;
-#ifdef CONFIG_IPIPE
 	unsigned long irqflags;
+
 	if (__ipipe_report_trap(IPIPE_TRAP_ACCESS, regs))
 		return;
 
 	irqflags = fault_entry(regs);
-#endif
+
 	prev_state = exception_enter();
 	__do_page_fault(regs, write, address);
 	exception_exit(prev_state);
-#ifdef CONFIG_IPIPE
+
 	fault_exit(irqflags);
-#endif
 }

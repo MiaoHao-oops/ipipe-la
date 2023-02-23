@@ -2,6 +2,7 @@
 /*
  * Copyright (C) 2020 Loongson Technology Corporation Limited
  */
+#include "asm/ipipe_base.h"
 #include <linux/bitops.h>
 #include <linux/bug.h>
 #include <linux/compiler.h>
@@ -9,6 +10,7 @@
 #include <linux/cpu_pm.h>
 #include <linux/kexec.h>
 #include <linux/init.h>
+#include <linux/ipipe.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/extable.h>
@@ -398,6 +400,9 @@ asmlinkage void do_fpe(struct pt_regs *regs, unsigned long fcsr)
 	void __user *fault_addr;
 	int sig;
 
+	if (__ipipe_report_trap(IPIPE_TRAP_FPU_EXC, regs))
+		return;
+
 	prev_state = exception_enter();
 	if (notify_die(DIE_FP, "FP exception", regs, 0, current->thread.trap_nr,
 		       SIGFPE) == NOTIFY_STOP)
@@ -480,6 +485,9 @@ asmlinkage void do_bp(struct pt_regs *regs)
 			break;
 	}
 
+	if (__ipipe_report_trap(IPIPE_TRAP_BREAK, regs))
+		return;
+
 	switch (bcode) {
 	case BRK_BUG:
 		die_if_kernel("Kernel bug detected", regs);
@@ -512,6 +520,9 @@ out_sigsegv:
 asmlinkage void do_watch(struct pt_regs *regs)
 {
 	enum ctx_state prev_state;
+
+	if (__ipipe_report_trap(IPIPE_TRAP_BREAK, regs))
+		return;
 
 	prev_state = exception_enter();
 
@@ -549,6 +560,9 @@ asmlinkage void do_ri(struct pt_regs *regs)
 	enum ctx_state prev_state;
 	unsigned int opcode = 0;
 	int status = -1;
+
+	if (__ipipe_report_trap(IPIPE_TRAP_UNDEFINSTR, regs))
+		return;
 
 	prev_state = exception_enter();
 	current->thread.trap_nr = read_csr_excode();
@@ -648,6 +662,9 @@ static void init_restore_lasx(void)
 asmlinkage void do_fpu(struct pt_regs *regs)
 {
 	enum ctx_state prev_state;
+
+	if (__ipipe_report_trap(IPIPE_TRAP_FPU_ACC, regs))
+		return;
 
 	prev_state = exception_enter();
 
