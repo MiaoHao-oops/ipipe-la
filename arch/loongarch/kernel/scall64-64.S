@@ -98,10 +98,15 @@ syscall_common:
 	/* TODO: how to check illegal syscalls? */
 	bnez	a0, n64_syscall_finish
 
-	/* restore a0, a1, a2 from kernel stack to do routine syscall */
+	/* restore a* from kernel stack to do routine syscall */
 	cfi_ld	a0, PT_R4, 1
 	cfi_ld	a1, PT_R5, 1
 	cfi_ld	a2, PT_R6, 1
+	cfi_ld	a3, PT_R7, 1
+	cfi_ld	a4, PT_R8, 1
+	cfi_ld	a5, PT_R9, 1
+	cfi_ld	a6, PT_R10, 1
+	cfi_ld	a7, PT_R11, 1
 #endif
 
 	/* Syscall number held in a7 */
