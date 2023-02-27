@@ -2,6 +2,7 @@
 /*
  * Copyright (C) 2020 Loongson Technology Corporation Limited
  */
+#include "linux/rwsem.h"
 #include <linux/context_tracking.h>
 #include <linux/signal.h>
 #include <linux/sched.h>
@@ -166,6 +167,7 @@ good_area:
  * Fix it, but check if it's kernel or user first..
  */
 bad_area:
+	up_read(&mm->mmap_sem);
 	if (__ipipe_report_trap(IPIPE_TRAP_ACCESS, regs))
 		return;
 
@@ -201,8 +203,10 @@ bad_area_nosemaphore:
 
 no_context:
 	/* Are we prepared to handle this kernel fault?	 */
-	if (fixup_exception(regs))
+	if (fixup_exception(regs)) {
+		current->thread.csr_badv = address;
 		return;
+	}
 
 	/*
 	 * Oops. The kernel tried to access some bad page. We'll have to

@@ -19,6 +19,20 @@
 
 #include <asm-generic/ipipe.h>
 
+#define TLBMISS_HANDLER_SETUP_PGD(pgd)	\
+	csr_writeq((unsigned long)pgd, LOONGARCH_CSR_PGDL);
+
+#define TLBMISS_HANDLER_RESTORE()					\
+	csr_writeq((unsigned long) smp_processor_id(),		\
+			    LOONGARCH_CSR_TMID)
+
+#define TLBMISS_HANDLER_SETUP()						\
+	do {								\
+		TLBMISS_HANDLER_SETUP_PGD(swapper_pg_dir);		\
+		TLBMISS_HANDLER_RESTORE();				\
+	} while (0)
+
+
 /*
  *  All unused by hardware upper bits will be considered
  *  as a software asid extension.
@@ -95,10 +109,7 @@ static inline void do_switch_mm(struct mm_struct *prev, struct mm_struct *next,
 	if (asid_valid(next, cpu) == 0)
 		get_new_mmu_context(next, cpu);
 	write_csr_asid(cpu_asid(cpu, next));
-	if (next == &init_mm)
-		csr_writeq((unsigned long)invalid_pgd, LOONGARCH_CSR_PGDL);
-	else
-		csr_writeq((unsigned long)next->pgd, LOONGARCH_CSR_PGDL);
+	TLBMISS_HANDLER_SETUP_PGD(next->pgd);
 
 	/*
 	 * Mark current->active_mm as not "active" anymore.
@@ -107,25 +118,13 @@ static inline void do_switch_mm(struct mm_struct *prev, struct mm_struct *next,
 	cpumask_set_cpu(cpu, mm_cpumask(next));
 }
 
-static inline void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *next,
-			     struct task_struct *tsk)
-{
-	unsigned long flags;
-
-	flags = hard_local_irq_save();
-	do_switch_mm(prev, next, tsk);
-	hard_local_irq_restore(flags);
-}
-
-#define switch_mm_irqs_off switch_mm_irqs_off
-
 static inline void switch_mm(struct mm_struct *prev, struct mm_struct *next,
 			struct task_struct *tsk)
 {
 	unsigned long flags;
 
 	flags = hard_local_irq_save();
-	switch_mm_irqs_off(prev, next, tsk);
+	do_switch_mm(prev, next, tsk);
 	hard_local_irq_restore(flags);
 }
 
@@ -138,8 +137,31 @@ static inline void destroy_context(struct mm_struct *mm)
 
 }
 
-#define activate_mm(prev, next)		switch_mm(prev, next, current)
 #define deactivate_mm(tsk, mm)		do { } while (0)
+
+/*
+ * After we have set current->mm to a new value, this activates
+ * the context for the new mm so we see the new mappings.
+ */
+static inline void
+activate_mm(struct mm_struct *prev, struct mm_struct *next)
+{
+	unsigned long flags;
+	unsigned int cpu = smp_processor_id();
+
+	local_irq_save(flags);
+
+	/* Unconditionally get a new ASID.  */
+	get_new_mmu_context(next, cpu);
+
+	write_csr_asid(cpu_asid(cpu, next));
+	TLBMISS_HANDLER_SETUP_PGD(next->pgd);
+
+	/* mark mmu ownership change */
+	cpumask_set_cpu(cpu, mm_cpumask(next));
+
+	local_irq_restore(flags);
+}
 
 /*
  * If mm is currently active_mm, we can't really drop it.  Instead,
