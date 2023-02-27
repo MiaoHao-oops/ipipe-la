@@ -736,7 +736,7 @@ asmlinkage void do_notify_resume(struct pt_regs *regs, void *unused,
 #ifdef CONFIG_IPIPE
 	bool stalled = irqs_disabled();
 #endif
-	local_irq_enable();
+	hard_local_irq_enable();
 
 	user_exit();
 
