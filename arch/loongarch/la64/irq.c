@@ -287,7 +287,7 @@ static void irqchip_init_default(void)
 
 void __init setup_IRQ(void)
 {
-#ifndef CONFIG_RUN_ON_QEMU
+// #ifndef CONFIG_RUN_ON_QEMU
 	u64 node;
 
 	if (loongson_sysconf.is_soc_cpu)
@@ -296,7 +296,7 @@ void __init setup_IRQ(void)
 		for_each_node(node)
 			writel(0x40000000 | (node << 12), (volatile void __iomem *)(((node << 44) | LOONGSON_HT1_CFG_BASE) + 0x274));
 	}
-#endif
+// #endif
 	if (!acpi_disabled) {
 		if (loongson_sysconf.bpi_version > BPI_VERSION_V1) {
 			irqchip_init();
