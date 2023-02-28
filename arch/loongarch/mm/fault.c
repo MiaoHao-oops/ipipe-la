@@ -168,8 +168,6 @@ good_area:
  */
 bad_area:
 	up_read(&mm->mmap_sem);
-	if (__ipipe_report_trap(IPIPE_TRAP_ACCESS, regs))
-		return;
 
 bad_area_nosemaphore:
 	/* User mode accesses just cause a SIGSEGV */
@@ -305,46 +303,46 @@ vmalloc_fault:
 static inline
 unsigned long fault_entry(struct pt_regs *regs)
 {
-       unsigned long flags;
-       int nosync = 1;
+	unsigned long flags;
+	int nosync = 1;
 
-       flags = hard_local_irq_save();
-       if (irqs_disabled_flags(flags))
-               nosync = __test_and_set_bit(IPIPE_STALL_FLAG,
-                                           &__ipipe_root_status);
-       hard_local_irq_enable();
+	flags = hard_local_irq_save();
+	if (irqs_disabled_flags(flags))
+		nosync = __test_and_set_bit(IPIPE_STALL_FLAG,
+					    &__ipipe_root_status);
+	hard_local_irq_enable();
 
-       return arch_mangle_irq_bits(nosync, flags);
+	return arch_mangle_irq_bits(nosync, flags);
 }
 static inline void fault_exit(unsigned long flags)
 {
-       int nosync;
+	int nosync;
 
-       IPIPE_WARN_ONCE(hard_irqs_disabled());
+	IPIPE_WARN_ONCE(hard_irqs_disabled());
 
-       /*
-        * '!nosync' here means that we had to turn on the stall bit
-        * in fault_entry() to mirror the hard interrupt state,
-        * because hard irqs were off but the stall bit was
-        * clear. Conversely, nosync in fault_exit() means that the
-        * stall bit state currently reflects the hard interrupt state
-        * we received on fault_entry().
-        */
-       nosync = arch_demangle_irq_bits(&flags);
-       if (!nosync) {
-               hard_local_irq_disable();
-               __clear_bit(IPIPE_STALL_FLAG, &__ipipe_root_status);
-               if (!hard_irqs_disabled_flags(flags))
-                       hard_local_irq_enable();
-       } else if (hard_irqs_disabled_flags(flags))
-               hard_local_irq_disable();
+	/*
+	 * '!nosync' here means that we had to turn on the stall bit
+	 * in fault_entry() to mirror the hard interrupt state,
+	 * because hard irqs were off but the stall bit was
+	 * clear. Conversely, nosync in fault_exit() means that the
+	 * stall bit state currently reflects the hard interrupt state
+	 * we received on fault_entry().
+	 */
+	nosync = arch_demangle_irq_bits(&flags);
+	if (!nosync) {
+		hard_local_irq_disable();
+		__clear_bit(IPIPE_STALL_FLAG, &__ipipe_root_status);
+		if (!hard_irqs_disabled_flags(flags))
+			hard_local_irq_enable();
+	} else if (hard_irqs_disabled_flags(flags))
+		hard_local_irq_disable();
 }
 
 #else
 
 static inline unsigned long fault_entry(struct pt_regs *regs)
 {
-       return 0;
+	return 0;
 }
 
 static inline void fault_exit(unsigned long x) { }
