@@ -38,6 +38,7 @@
  * Aug/Sep 2004 Changed to four level page tables (Andi Kleen)
  */
 
+#include "linux/printk.h"
 #include <linux/kernel_stat.h>
 #include <linux/mm.h>
 #include <linux/sched/mm.h>
@@ -4761,6 +4762,8 @@ void print_vma_addr(char *prefix, unsigned long ip)
 {
 	struct mm_struct *mm = current->mm;
 	struct vm_area_struct *vma;
+
+	pr_info("%s: mm %p mm->mmap_sem %p", __func__, mm, &mm->mmap_sem);
 
 	/*
 	 * we might be running from an atomic context so we cannot sleep
