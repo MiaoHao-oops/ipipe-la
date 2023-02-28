@@ -2,7 +2,6 @@
 /*
  * Copyright (C) 2020 Loongson Technology Corporation Limited
  */
-#include "asm/ipipe_base.h"
 #include <linux/bitops.h>
 #include <linux/bug.h>
 #include <linux/compiler.h>

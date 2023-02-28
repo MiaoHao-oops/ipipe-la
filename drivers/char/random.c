@@ -238,9 +238,6 @@
  * Eastlake, Steve Crocker, and Jeff Schiller.
  */
 
-#include "asm/thread_info.h"
-#include "linux/printk.h"
-#include "linux/smp.h"
 #include <linux/utsname.h>
 #include <linux/module.h>
 #include <linux/kernel.h>

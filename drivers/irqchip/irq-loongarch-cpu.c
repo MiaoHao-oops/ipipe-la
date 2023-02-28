@@ -3,7 +3,6 @@
  * Copyright (C) 2020 Loongson Technologies, Inc.
  */
 
-#include "linux/ipipe.h"
 #include <linux/init.h>
 #include <linux/interrupt.h>
 #include <linux/kernel.h>

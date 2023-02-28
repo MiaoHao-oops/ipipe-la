@@ -2,7 +2,6 @@
 /*
  * Copyright (C) 2020 Loongson Technology Corporation Limited
  */
-#include "linux/rwsem.h"
 #include <linux/context_tracking.h>
 #include <linux/signal.h>
 #include <linux/sched.h>
@@ -13,6 +12,7 @@
 #include <linux/types.h>
 #include <linux/ptrace.h>
 #include <linux/ratelimit.h>
+#include <linux/rwsem.h>
 #include <linux/mman.h>
 #include <linux/mm.h>
 #include <linux/smp.h>
