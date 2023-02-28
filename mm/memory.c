@@ -4763,7 +4763,7 @@ void print_vma_addr(char *prefix, unsigned long ip)
 	struct mm_struct *mm = current->mm;
 	struct vm_area_struct *vma;
 
-	pr_info("%s: mm %p mm->mmap_sem %p", __func__, mm, &mm->mmap_sem);
+	printk(KERN_ALERT "%s: mm %p mm->mmap_sem %p", __func__, mm, &mm->mmap_sem);
 
 	/*
 	 * we might be running from an atomic context so we cannot sleep
