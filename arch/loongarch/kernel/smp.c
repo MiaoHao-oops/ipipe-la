@@ -465,11 +465,8 @@ void flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 			.vma = vma,
 			.addr1 = page,
 		};
-		unsigned long irqflag;
-		
-		irqflag = hard_local_irq_save();
+
 		on_each_cpu_mask(mm_cpumask(vma->vm_mm), flush_tlb_page_ipi, &fd, 1);
-		hard_local_irq_restore(irqflag);
 	} else {
 		unsigned int cpu;
 
