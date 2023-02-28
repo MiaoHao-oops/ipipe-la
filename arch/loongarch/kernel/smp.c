@@ -459,6 +459,8 @@ static void flush_tlb_page_ipi(void *info)
 
 void flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 {
+	unsigned long irqflag;
+	irqflag = hard_local_irq_save();
 	preempt_disable();
 	if ((atomic_read(&vma->vm_mm->mm_users) != 1) || (current->mm != vma->vm_mm)) {
 		struct flush_tlb_data fd = {
@@ -481,6 +483,7 @@ void flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 		local_flush_tlb_page(vma, page);
 	}
 	preempt_enable();
+	hard_local_irq_restore(irqflag);
 }
 
 static void flush_tlb_one_ipi(void *info)
