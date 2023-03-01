@@ -70,9 +70,10 @@ static void __kprobes __do_page_fault(struct pt_regs *regs, unsigned long write,
 #else
 # define VMALLOC_FAULT_TARGET vmalloc_fault
 #endif
-	printk("[0]prmd: 0x%lx", regs->csr_prmd);
-	if (user_mode(regs) && (get_fs().seg & address))
+	if (user_mode(regs) && (get_fs().seg & address)) {
+		printk("[0]prmd: 0x%lx", regs->csr_prmd);
 		goto bad_area_nosemaphore;
+	}
 
 	if (unlikely(address >= VMALLOC_START && address <= VMALLOC_END))
 		goto VMALLOC_FAULT_TARGET;
@@ -81,8 +82,11 @@ static void __kprobes __do_page_fault(struct pt_regs *regs, unsigned long write,
 	 * If we're in an interrupt or have no user
 	 * context, we must not take the fault..
 	 */
-	if (faulthandler_disabled() || !mm)
+	if (faulthandler_disabled() || !mm) {
+		printk("[0]prmd: 0x%lx", regs->csr_prmd);
+		printk("[0]mm: %p", mm);
 		goto bad_area_nosemaphore;
+	}
 
 	if (user_mode(regs))
 		flags |= FAULT_FLAG_USER;
