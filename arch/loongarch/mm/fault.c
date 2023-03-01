@@ -70,6 +70,7 @@ static void __kprobes __do_page_fault(struct pt_regs *regs, unsigned long write,
 #else
 # define VMALLOC_FAULT_TARGET vmalloc_fault
 #endif
+	printk("[0]prmd: 0x%lx", regs->csr_prmd);
 	if (user_mode(regs) && (get_fs().seg & address))
 		goto bad_area_nosemaphore;
 
@@ -170,6 +171,8 @@ bad_area:
 	up_read(&mm->mmap_sem);
 
 bad_area_nosemaphore:
+	printk("[1]prmd: 0x%lx", regs->csr_prmd);
+
 	/* User mode accesses just cause a SIGSEGV */
 	if (user_mode(regs)) {
 		tsk->thread.csr_badv = address;
