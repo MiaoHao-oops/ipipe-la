@@ -194,6 +194,7 @@ void __init efi_init(void)
 		return;
 	}
 	set_bit(EFI_64BIT, &efi.flags);
-	efi.config_table = (unsigned long)efi.systab->tables;
+	efi.config_table = (unsigned long)early_memremap_ro
+		((unsigned long)efi.systab->tables, sizeof(efi.config_table));
 	efi_config_init(arch_tables);
 }

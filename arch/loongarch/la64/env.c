@@ -101,7 +101,8 @@ static int list_find(struct boot_params *bp)
 		fhead = (struct _extention_list_hdr *)((char *)bp
 				+ bp->ext_location.ext_offset);
 	else
-		fhead = bp->ext_location.extlist;
+		fhead = (struct _extention_list_hdr*)early_memremap_ro
+			((unsigned long)bp->ext_location.extlist, sizeof(fhead));
 
 	if (!fhead) {
 		printk("the bp ext struct empty!\n");
@@ -131,12 +132,12 @@ static int list_find(struct boot_params *bp)
 					+ fhead->next_ext.ext_offset);
 		} else {
 // #ifdef CONFIG_RUN_ON_QEMU
-			// index = (unsigned long)fhead->next_ext.extlist;
-			// fhead = (struct _extention_list_hdr *)early_memremap_ro
-			// 	((unsigned long)fhead->next_ext.extlist, sizeof(fhead));
+			index = (unsigned long)fhead->next_ext.extlist;
+			fhead = (struct _extention_list_hdr *)early_memremap_ro
+				((unsigned long)fhead->next_ext.extlist, sizeof(fhead));
 // #else
-			fhead = (struct _extention_list_hdr *)fhead->next_ext.extlist;
-			index = (unsigned long)fhead;
+			// fhead = (struct _extention_list_hdr *)fhead->next_ext.extlist;
+			// index = (unsigned long)fhead;
 // #endif
 		}
 

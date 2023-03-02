@@ -21,7 +21,10 @@ static inline void efifb_setup_from_dmi(struct screen_info *si, const char *opt)
 #define arch_efi_call_virt(p, f, args...)        \
 ({                                               \
 	efi_##f##_t * __f;                       \
-	__f = p->f;                              \
+	efi_runtime_services_t * __p;		\
+	__p = (efi_runtime_services_t *)TO_CAC((unsigned long)p);	\
+	__f = __p->f;                              \
+	__f = (efi_##f##_t *)TO_CAC((unsigned long)__f);	\
 	__f(args);                               \
 })
 
