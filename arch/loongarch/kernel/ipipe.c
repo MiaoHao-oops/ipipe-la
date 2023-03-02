@@ -312,7 +312,7 @@ asmlinkage void __ipipe_grab_irq(int irq, struct pt_regs *regs)
 		p->tick_regs.csr_prmd =
 			(p->curr == &p->root
 			 ? regs->csr_prmd
-			 : regs->csr_prmd | ~CSR_PRMD_PIE);
+			 : regs->csr_prmd & ~CSR_PRMD_PIE);
 		p->tick_regs.csr_era = regs->csr_era;
 	}
 
