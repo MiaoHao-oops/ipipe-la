@@ -682,6 +682,9 @@ asmlinkage void do_lsx(struct pt_regs *regs)
 {
 	enum ctx_state prev_state;
 
+	if (__ipipe_report_trap(IPIPE_TRAP_LSX_ACC, regs))
+		return;
+
 	prev_state = exception_enter();
 
 	if (!cpu_has_lsx) {
@@ -703,6 +706,9 @@ out:
 asmlinkage void do_lasx(struct pt_regs *regs)
 {
 	enum ctx_state prev_state;
+
+	if (__ipipe_report_trap(IPIPE_TRAP_LASX_ACC, regs))
+		return;
 
 	prev_state = exception_enter();
 

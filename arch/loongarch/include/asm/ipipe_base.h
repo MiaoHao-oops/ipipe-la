@@ -88,10 +88,12 @@ unsigned __ipipe_processor_id(void);
 #define IPIPE_TRAP_UNKNOWN	 4	/* Unknown exception */
 #define IPIPE_TRAP_BREAK	 5	/* Instruction breakpoint */
 #define IPIPE_TRAP_FPU_ACC	 6	/* Floating point access */
-#define IPIPE_TRAP_FPU_EXC	 7	/* Floating point exception */
-#define IPIPE_TRAP_UNDEFINSTR	 8	/* Undefined instruction */
-#define IPIPE_TRAP_ALIGNMENT	 9	/* Unaligned access exception */
-#define IPIPE_NR_FAULTS         10
+#define IPIPE_TRAP_LSX_ACC	 7	/* LSX access */
+#define IPIPE_TRAP_LASX_ACC	 8	/* LASX access */
+#define IPIPE_TRAP_FPU_EXC	 9	/* Floating point exception */
+#define IPIPE_TRAP_UNDEFINSTR	 10	/* Undefined instruction */
+#define IPIPE_TRAP_ALIGNMENT	 11	/* Unaligned access exception */
+#define IPIPE_NR_FAULTS         12
 
 #endif /* CONFIG_IPIPE */
 

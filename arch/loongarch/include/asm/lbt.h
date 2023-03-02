@@ -148,6 +148,8 @@ static inline void lose_lbt(int save)
 }
 
 #else
+static inline int thread_lbt_context_live(void) { return 0; }
+static inline void init_lbt(void) {}
 static inline void own_lbt_inatomic(int restore)
 {}
 static inline void lose_lbt_inatomic(int save, struct task_struct *tsk)
