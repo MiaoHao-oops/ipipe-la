@@ -560,7 +560,7 @@ asmlinkage void do_ri(struct pt_regs *regs)
 	unsigned int opcode = 0;
 	int status = -1;
 
-	if (__ipipe_report_trap(IPIPE_TRAP_UNDEFINSTR, regs))
+	if (__ipipe_report_trap(IPIPE_TRAP_RI, regs))
 		return;
 
 	prev_state = exception_enter();
@@ -661,6 +661,7 @@ static void init_restore_lasx(void)
 asmlinkage void do_fpu(struct pt_regs *regs)
 {
 	enum ctx_state prev_state;
+	unsigned long flags;
 
 	if (__ipipe_report_trap(IPIPE_TRAP_FPU_ACC, regs))
 		return;
@@ -671,9 +672,9 @@ asmlinkage void do_fpu(struct pt_regs *regs)
 	BUG_ON(is_lsx_enabled());
 	BUG_ON(is_lasx_enabled());
 
-	preempt_disable();
+	flags = hard_local_irq_save();
 	init_restore_fp();
-	preempt_enable();
+	hard_local_irq_restore(flags);
 
 	exception_exit(prev_state);
 }

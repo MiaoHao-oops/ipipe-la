@@ -47,32 +47,7 @@
 #define IPIPE_SERVICE_VNMI   (IPIPE_IPI_BASE + NR_IPI + 3)
 
 #define hard_smp_processor_id()	raw_smp_processor_id()
-
-#ifdef CONFIG_SMP_ON_UP
-unsigned __ipipe_processor_id(void);
-
-#define ipipe_processor_id()						\
-	({								\
-		register unsigned int cpunum __asm__ ("r0");		\
-		register unsigned int r1 __asm__ ("r1");		\
-		register unsigned int r2 __asm__ ("r2");		\
-		register unsigned int r3 __asm__ ("r3");		\
-		register unsigned int ip __asm__ ("ip");		\
-		register unsigned int ra __asm__ ("ra");		\
-		__asm__ __volatile__ ("\n"				\
-			"1:	bl __ipipe_processor_id\n"		\
-			"	.pushsection \".alt.smp.init\", \"a\"\n" \
-			"	.long	1b\n"				\
-			"	mov	%0, #0\n"			\
-			"	.popsection"				\
-				: "=r"(cpunum),	"=r"(r1), "=r"(r2), "=r"(r3), \
-				  "=r"(ip), "=r"(ra)			\
-				: /* */ : "cc");			\
-		cpunum;						\
-	})
-#else /* !SMP_ON_UP */
 #define ipipe_processor_id() raw_smp_processor_id()
-#endif /* !SMP_ON_UP */
 
 #define IPIPE_ARCH_HAVE_VIRQ_IPI
 
@@ -80,7 +55,7 @@ unsigned __ipipe_processor_id(void);
 #define ipipe_processor_id()  (0)
 #endif /* !CONFIG_SMP */
 
-/* ARM64 traps */
+/* LoongArch64 traps */
 #define IPIPE_TRAP_MAYDAY        0	/* Internal recovery trap */
 #define IPIPE_TRAP_ACCESS	 1	/* Data or instruction access exception */
 #define IPIPE_TRAP_SECTION	 2	/* Section fault */
@@ -91,7 +66,7 @@ unsigned __ipipe_processor_id(void);
 #define IPIPE_TRAP_LSX_ACC	 7	/* LSX access */
 #define IPIPE_TRAP_LASX_ACC	 8	/* LASX access */
 #define IPIPE_TRAP_FPU_EXC	 9	/* Floating point exception */
-#define IPIPE_TRAP_UNDEFINSTR	 10	/* Undefined instruction */
+#define IPIPE_TRAP_RI		 10	/* Reserved instruction */
 #define IPIPE_TRAP_ALIGNMENT	 11	/* Unaligned access exception */
 #define IPIPE_NR_FAULTS         12
 
