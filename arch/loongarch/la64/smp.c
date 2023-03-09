@@ -199,7 +199,7 @@ void __ipipe_ipis_alloc(void)
 	 * otherwise something is wrong (likely someone would have
 	 * allocated virqs before we do, and this would break our
 	 * fixed numbering scheme for IPIs).
-         */
+	 */
 	for (ipi = 0; ipi < NR_IPI + IPIPE_OOB_IPI_NR; ipi++) {
 		virq = ipipe_alloc_virq();
 		WARN_ON_ONCE(virq != IPIPE_IPI_BASE + ipi);
@@ -227,12 +227,12 @@ void __ipipe_ipis_request(void)
 
 static void smp_cross_call(const struct cpumask *target, unsigned int ipinr)
 {
-	unsigned int sgi;
+	unsigned int action;
 	unsigned long flags;
 
-	sgi = 1 << (ipinr + 1);
+	action = 1 << (ipinr + 1);
 	flags = hard_local_irq_save();
-	loongson3_send_ipi_mask(target, sgi);
+	loongson3_send_ipi_mask(target, action);
 	hard_local_irq_restore(flags);
 }
 

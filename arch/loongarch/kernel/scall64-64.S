@@ -90,9 +90,9 @@ syscall_common:
 #else
 	/* save syscall number(a7) in thread_info->syscall */
 	LONG_S	a7, tp, TI_SYSCALL
-	addi.d	a0, tp, 0
-	addi.d	a1, a7, 0
-	addi.d	a2, sp, 0
+	or	a0, tp, zero
+	or	a1, a7, zero
+	or	a2, sp, zero
 	bl	ipipe_handle_syscall
 
 	/* TODO: how to check illegal syscalls? */

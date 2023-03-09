@@ -27,6 +27,66 @@
 
 int show_unhandled_signals = 1;
 
+#ifdef CONFIG_IPIPE
+/*
+ * We need to synchronize the virtual interrupt state with the hard
+ * interrupt state we received on entry, then turn hardirqs back on to
+ * allow code which does not require strict serialization to be
+ * preempted by an out-of-band activity.
+ *
+ * TRACING: the entry code already told lockdep and tracers about the
+ * hard interrupt state on entry to fault handlers, so no need to
+ * reflect changes to that state via calls to trace_hardirqs_*
+ * helpers. From the main kernel's point of view, there is no change.
+ */
+static inline
+unsigned long fault_entry(struct pt_regs *regs)
+{
+	unsigned long flags;
+	int nosync = 1;
+
+	flags = hard_local_irq_save();
+	if (irqs_disabled_flags(flags))
+		nosync = __test_and_set_bit(IPIPE_STALL_FLAG,
+					    &__ipipe_root_status);
+	hard_local_irq_enable();
+
+	return arch_mangle_irq_bits(nosync, flags);
+}
+static inline void fault_exit(unsigned long flags)
+{
+	int nosync;
+
+	IPIPE_WARN_ONCE(hard_irqs_disabled());
+
+	/*
+	 * '!nosync' here means that we had to turn on the stall bit
+	 * in fault_entry() to mirror the hard interrupt state,
+	 * because hard irqs were off but the stall bit was
+	 * clear. Conversely, nosync in fault_exit() means that the
+	 * stall bit state currently reflects the hard interrupt state
+	 * we received on fault_entry().
+	 */
+	nosync = arch_demangle_irq_bits(&flags);
+	if (!nosync) {
+		hard_local_irq_disable();
+		__clear_bit(IPIPE_STALL_FLAG, &__ipipe_root_status);
+		if (!hard_irqs_disabled_flags(flags))
+			hard_local_irq_enable();
+	} else if (hard_irqs_disabled_flags(flags))
+		hard_local_irq_disable();
+}
+
+#else
+
+static inline unsigned long fault_entry(struct pt_regs *regs)
+{
+	return 0;
+}
+
+static inline void fault_exit(unsigned long x) { }
+#endif /* !CONFIG_IPIPE */
+
 /*
  * This routine handles page faults.  It determines the address,
  * and the problem, and then passes it off to one of the appropriate
@@ -42,6 +102,7 @@ static void __kprobes __do_page_fault(struct pt_regs *regs, unsigned long write,
 	int si_code;
 	vm_fault_t fault;
 	unsigned int flags = FAULT_FLAG_ALLOW_RETRY | FAULT_FLAG_KILLABLE;
+	unsigned long irqflags;
 
 	static DEFINE_RATELIMIT_STATE(ratelimit_state, 5 * HZ, 10);
 
@@ -53,6 +114,9 @@ static void __kprobes __do_page_fault(struct pt_regs *regs, unsigned long write,
 		       current->thread.trap_nr, SIGSEGV) == NOTIFY_STOP)
 		return;
 #endif
+	if (__ipipe_report_trap(IPIPE_TRAP_ACCESS, regs))
+		return;
+	irqflags = fault_entry(regs);
 
 	si_code = SEGV_MAPERR;
 
@@ -123,7 +187,7 @@ good_area:
 	fault = handle_mm_fault(vma, address, flags);
 
 	if ((fault & VM_FAULT_RETRY) && fatal_signal_pending(current))
-		return;
+		goto out;
 
 	perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS, 1, regs, address);
 	if (unlikely(fault & VM_FAULT_ERROR)) {
@@ -160,7 +224,7 @@ good_area:
 	}
 
 	up_read(&mm->mmap_sem);
-	return;
+	goto out;
 
 /*
  * Something tried to access memory that isn't in our memory map..
@@ -196,13 +260,13 @@ bad_area_nosemaphore:
 		}
 		current->thread.trap_nr = read_csr_excode();
 		force_sig_fault(SIGSEGV, si_code, (void __user *)address, tsk);
-		return;
+		goto out;
 	}
 
 no_context:
 	/* Are we prepared to handle this kernel fault?	 */
 	if (fixup_exception(regs))
-		return;
+		goto out;
 
 	/*
 	 * Oops. The kernel tried to access some bad page. We'll have to
@@ -225,7 +289,7 @@ out_of_memory:
 	if (!user_mode(regs))
 		goto no_context;
 	pagefault_out_of_memory();
-	return;
+	goto out;
 
 do_sigbus:
 	up_read(&mm->mmap_sem);
@@ -242,7 +306,7 @@ do_sigbus:
 	tsk->thread.csr_badv = address;
 	force_sig_fault(SIGBUS, BUS_ADRERR, (void __user *)address, tsk);
 
-	return;
+	goto out;
 
 #ifndef CONFIG_64BIT
 vmalloc_fault:
@@ -284,82 +348,16 @@ vmalloc_fault:
 		return;
 	}
 #endif
+out:
+	fault_exit(irqflags);
 }
-
-#ifdef CONFIG_IPIPE
-/*
- * We need to synchronize the virtual interrupt state with the hard
- * interrupt state we received on entry, then turn hardirqs back on to
- * allow code which does not require strict serialization to be
- * preempted by an out-of-band activity.
- *
- * TRACING: the entry code already told lockdep and tracers about the
- * hard interrupt state on entry to fault handlers, so no need to
- * reflect changes to that state via calls to trace_hardirqs_*
- * helpers. From the main kernel's point of view, there is no change.
- */
-static inline
-unsigned long fault_entry(struct pt_regs *regs)
-{
-	unsigned long flags;
-	int nosync = 1;
-
-	flags = hard_local_irq_save();
-	if (irqs_disabled_flags(flags))
-		nosync = __test_and_set_bit(IPIPE_STALL_FLAG,
-					    &__ipipe_root_status);
-	hard_local_irq_enable();
-
-	return arch_mangle_irq_bits(nosync, flags);
-}
-static inline void fault_exit(unsigned long flags)
-{
-	int nosync;
-
-	IPIPE_WARN_ONCE(hard_irqs_disabled());
-
-	/*
-	 * '!nosync' here means that we had to turn on the stall bit
-	 * in fault_entry() to mirror the hard interrupt state,
-	 * because hard irqs were off but the stall bit was
-	 * clear. Conversely, nosync in fault_exit() means that the
-	 * stall bit state currently reflects the hard interrupt state
-	 * we received on fault_entry().
-	 */
-	nosync = arch_demangle_irq_bits(&flags);
-	if (!nosync) {
-		hard_local_irq_disable();
-		__clear_bit(IPIPE_STALL_FLAG, &__ipipe_root_status);
-		if (!hard_irqs_disabled_flags(flags))
-			hard_local_irq_enable();
-	} else if (hard_irqs_disabled_flags(flags))
-		hard_local_irq_disable();
-}
-
-#else
-
-static inline unsigned long fault_entry(struct pt_regs *regs)
-{
-	return 0;
-}
-
-static inline void fault_exit(unsigned long x) { }
-#endif /* !CONFIG_IPIPE */
 
 asmlinkage void __kprobes do_page_fault(struct pt_regs *regs,
 	unsigned long write, unsigned long address)
 {
 	enum ctx_state prev_state;
-	unsigned long irqflags;
-
-	if (__ipipe_report_trap(IPIPE_TRAP_ACCESS, regs))
-		return;
-
-	irqflags = fault_entry(regs);
 
 	prev_state = exception_enter();
 	__do_page_fault(regs, write, address);
 	exception_exit(prev_state);
-
-	fault_exit(irqflags);
 }

@@ -36,8 +36,8 @@
 
 #ifdef CONFIG_SMP
 /*
- * Out-of-band IPIs are directly mapped to SGI1-3, instead of
- * multiplexed over SGI0 like regular in-band messages.
+ * Out-of-band IPIs are directly mapped to reserved action bits,
+ * just like regular in-band IPI requests.
  */
 #define IPIPE_IPI_BASE         IPIPE_VIRQ_BASE
 #define IPIPE_OOB_IPI_NR	4
