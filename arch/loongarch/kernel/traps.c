@@ -697,9 +697,9 @@ asmlinkage void do_lsx(struct pt_regs *regs)
 	die_if_kernel("do_lsx invoked from kernel context!", regs);
 	BUG_ON(is_lasx_enabled());
 
-	flags = hard_local_irq_save();
+	flags = laeu_enter_atomic();
 	init_restore_lsx();
-	hard_local_irq_restore(flags);
+	laeu_exit_atomic(flags);
 
 out:
 	exception_exit(prev_state);
@@ -722,9 +722,9 @@ asmlinkage void do_lasx(struct pt_regs *regs)
 	die_if_kernel("lasx disable invoked from kernel context!",
 			regs);
 
-	flags = hard_local_irq_save();
+	flags = laeu_enter_atomic();
 	init_restore_lasx();
-	hard_local_irq_restore(flags);
+	laeu_exit_atomic(flags);
 
 out:
 	exception_exit(prev_state);
@@ -753,9 +753,9 @@ asmlinkage void do_lbt(struct pt_regs *regs)
 		goto out;
 	}
 
-	flags = hard_local_irq_save();
+	flags = laeu_enter_atomic();
 	init_restore_lbt();
-	hard_local_irq_restore(flags);
+	laeu_exit_atomic(flags);
 out:
 	exception_exit(prev_state);
 }
