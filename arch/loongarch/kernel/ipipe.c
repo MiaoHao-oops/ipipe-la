@@ -7,7 +7,7 @@
  * Copyright (C) 2005 Stelian Pop.
  * Copyright (C) 2006-2008 Gilles Chanteperdrix.
  * Copyright (C) 2010 Philippe Gerum (SMP port).
- * Copyright (C) 2022 Miao Hao (LoongArch port).
+ * Copyright (C) 2022 Hao Miao (LoongArch port).
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,17 +46,17 @@
 #include <linux/cpu.h>
 #include <linux/ipipe_domain.h>
 #include <linux/ipipe_tickdev.h>
-// #include <asm/system_info.h>
 #include <asm/atomic.h>
 #include <asm/hardirq.h>
 #include <asm/io.h>
 #include <asm/ipipe.h>
 #include <asm/unistd.h>
-// #include <asm/mach/irq.h>
-// #include <asm/exception.h>
 #include <asm/mmu_context.h>
 
 static void __ipipe_do_IRQ(unsigned irq, void *cookie);
+
+/* irq_nesting tracks the interrupt nesting level for a CPU. */
+DEFINE_PER_CPU(int, irq_nesting);
 
 #ifdef CONFIG_IPIPE_DEBUG_INTERNAL
 void (*__ipipe_mach_hrtimer_debug)(unsigned irq);
