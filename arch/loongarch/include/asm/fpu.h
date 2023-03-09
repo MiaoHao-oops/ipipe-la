@@ -12,6 +12,7 @@
 #ifndef _ASM_FPU_H
 #define _ASM_FPU_H
 
+#include <linux/bottom_half.h>
 #include <linux/sched.h>
 #include <linux/sched/task_stack.h>
 #include <linux/ptrace.h>
@@ -55,6 +56,34 @@ static inline void restore_lasx(struct task_struct *t);
 #ifdef CONFIG_LOONGSON3_ACPI_CPUFREQ
 DECLARE_PER_CPU(unsigned long, msa_count);
 DECLARE_PER_CPU(unsigned long, lasx_count);
+#endif
+
+#ifdef CONFIG_IPIPE
+
+#define laeu_enter_atomic()		\
+	({				\
+		unsigned long __flags;	\
+		local_bh_disable();	\
+		__flags;		\
+	})
+
+#define laeu_exit_atomic(__flags)	\
+	do {				\
+		local_bh_enable();	\
+	} while (0)
+
+#else
+
+#define laeu_enter_atomic()		\
+	do {				\
+		preempt_disable();	\
+	} while (0)
+
+#define laeu_exit_atomic()		\
+	do {				\
+		preempt_enable();	\
+	} while (0)
+
 #endif
 
 /*

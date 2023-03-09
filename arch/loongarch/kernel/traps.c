@@ -672,9 +672,9 @@ asmlinkage void do_fpu(struct pt_regs *regs)
 	BUG_ON(is_lsx_enabled());
 	BUG_ON(is_lasx_enabled());
 
-	flags = hard_local_irq_save();
+	flags = laeu_enter_atomic();
 	init_restore_fp();
-	hard_local_irq_restore(flags);
+	laeu_exit_atomic(flags);
 
 	exception_exit(prev_state);
 }
@@ -755,7 +755,7 @@ asmlinkage void do_lbt(struct pt_regs *regs)
 
 	flags = hard_local_irq_save();
 	init_restore_lbt();
-	flags = hard_local_irq_save();
+	hard_local_irq_restore(flags);
 out:
 	exception_exit(prev_state);
 }
