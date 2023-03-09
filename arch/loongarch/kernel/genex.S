@@ -67,24 +67,24 @@ SYM_FUNC_START(except_vec_vi_handler)
 	 * SAVE_ALL ensures we are using a valid kernel stack for the thread.
 	 * Check if we are already using the IRQ stack.
 	 */
-	move	s1, sp # Preserve the sp
+	// move	s1, sp # Preserve the sp
 
-	/* Get IRQ stack for this CPU */
-	la		t1, irq_stack
-	LONG_ADDU	t1, t1, $r21
-	LONG_L		t0, t1, 0
+	// /* Get IRQ stack for this CPU */
+	// la		t1, irq_stack
+	// LONG_ADDU	t1, t1, $r21
+	// LONG_L		t0, t1, 0
 
-	# Check if already on IRQ stack
-	PTR_LI		t1, ~(_THREAD_SIZE-1)
-	and		t1, t1, sp
-	beq		t0, t1, 2f
+	// # Check if already on IRQ stack
+	// PTR_LI		t1, ~(_THREAD_SIZE-1)
+	// and		t1, t1, sp
+	// beq		t0, t1, 2f
 
-	/* Switch to IRQ stack */
-	li.w		t1, _IRQ_STACK_START
-	PTR_ADDU	sp, t0, t1
+	// /* Switch to IRQ stack */
+	// li.w		t1, _IRQ_STACK_START
+	// PTR_ADDU	sp, t0, t1
 
-	/* Save task's sp on IRQ stack so that unwinding can follow it */
-	LONG_S		s1, sp, 0
+	// /* Save task's sp on IRQ stack so that unwinding can follow it */
+	// LONG_S		s1, sp, 0
 2:
 	/* v0 is equal to a0
 	 * v0: irq number for do_vi
@@ -93,7 +93,7 @@ SYM_FUNC_START(except_vec_vi_handler)
 	jirl		ra, t0, 0
 
 	/* Restore sp */
-	move	sp, s1
+	// move	sp, s1
 
 	la	t0, ret_from_irq
 	jirl    zero, t0, 0

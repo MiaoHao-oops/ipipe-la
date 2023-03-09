@@ -128,14 +128,16 @@
 		cfi_st	$r4, PT_R4, \docfi
 		cfi_st	$r5, PT_R5, \docfi
 #ifdef CONFIG_IPIPE
-		// csrrd	t0, LOONGARCH_CSR_EUEN
-		// LONG_S	t0, sp, PT_EUEN
-		// csrrd	t0, LOONGARCH_CSR_ECFG
-		// LONG_S	t0, sp, PT_ECFG
+		csrrd	t0, LOONGARCH_CSR_EUEN
+		LONG_S	t0, sp, PT_EUEN
+		csrrd	t0, LOONGARCH_CSR_CRMD
+		LONG_S	t0, sp, PT_CRMD
+		csrrd	t0, LOONGARCH_CSR_ECFG
+		LONG_S	t0, sp, PT_ECFG
 		csrrd	t0, LOONGARCH_CSR_ESTAT
 		LONG_S	t0, sp, PT_ESTAT
-		// csrrd	t0, LOONGARCH_CSR_BADV
-		// LONG_S	t0, sp, PT_BVADDR
+		csrrd	t0, LOONGARCH_CSR_BADV
+		LONG_S	t0, sp, PT_BVADDR
 #endif
 		csrrd	t0, LOONGARCH_CSR_PRMD
 		LONG_S	t0, sp, PT_PRMD
@@ -153,13 +155,13 @@
 		.endif
 		cfi_st	tp, PT_R2, \docfi
 		cfi_st	fp, PT_R22, \docfi
+		cfi_st	$r21, PT_R21, \docfi
 
 		/* Set thread_info if we're coming from user mode */
 		andi	t0, t0, 3	/* extract pplv bit */
 		beqz	t0, 9f
 
 		/* coming from user mode should update r21 */
-		cfi_st	$r21, PT_R21, \docfi
 		csrrd	$r21, PERCPU_BASE_KS
 
 		li.d	tp, ~_THREAD_MASK
