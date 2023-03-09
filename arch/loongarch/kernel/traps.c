@@ -682,6 +682,7 @@ asmlinkage void do_fpu(struct pt_regs *regs)
 asmlinkage void do_lsx(struct pt_regs *regs)
 {
 	enum ctx_state prev_state;
+	unsigned long flags;
 
 	if (__ipipe_report_trap(IPIPE_TRAP_LSX_ACC, regs))
 		return;
@@ -696,9 +697,9 @@ asmlinkage void do_lsx(struct pt_regs *regs)
 	die_if_kernel("do_lsx invoked from kernel context!", regs);
 	BUG_ON(is_lasx_enabled());
 
-	preempt_disable();
+	flags = hard_local_irq_save();
 	init_restore_lsx();
-	preempt_enable();
+	hard_local_irq_restore(flags);
 
 out:
 	exception_exit(prev_state);
@@ -707,6 +708,7 @@ out:
 asmlinkage void do_lasx(struct pt_regs *regs)
 {
 	enum ctx_state prev_state;
+	unsigned long flags;
 
 	if (__ipipe_report_trap(IPIPE_TRAP_LASX_ACC, regs))
 		return;
@@ -720,9 +722,9 @@ asmlinkage void do_lasx(struct pt_regs *regs)
 	die_if_kernel("lasx disable invoked from kernel context!",
 			regs);
 
-	preempt_disable();
+	flags = hard_local_irq_save();
 	init_restore_lasx();
-	preempt_enable();
+	hard_local_irq_restore(flags);
 
 out:
 	exception_exit(prev_state);
@@ -743,6 +745,7 @@ static void init_restore_lbt(void)
 asmlinkage void do_lbt(struct pt_regs *regs)
 {
 	enum ctx_state prev_state;
+	unsigned long flags;
 	prev_state = exception_enter();
 
 	if (!cpu_has_lbt) {
@@ -750,9 +753,9 @@ asmlinkage void do_lbt(struct pt_regs *regs)
 		goto out;
 	}
 
-	preempt_disable();
+	flags = hard_local_irq_save();
 	init_restore_lbt();
-	preempt_enable();
+	flags = hard_local_irq_save();
 out:
 	exception_exit(prev_state);
 }
