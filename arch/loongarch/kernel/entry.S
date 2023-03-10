@@ -171,7 +171,6 @@ SYM_CODE_START(syscall_exit_partial)
 	li.w	t0, _TIP_HEAD
 	and	t0, t0, t1
 	beqz	t0, syscall_exit_noirq
-	// RESTORE_TEMP
 	b 	restore_partial
 #endif
 syscall_exit_noirq:
