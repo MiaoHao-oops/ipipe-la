@@ -13,6 +13,7 @@
 #define _ASM_FPU_H
 
 #include <linux/bottom_half.h>
+#include <linux/ipipe.h>
 #include <linux/sched.h>
 #include <linux/sched/task_stack.h>
 #include <linux/ptrace.h>
@@ -60,16 +61,16 @@ DECLARE_PER_CPU(unsigned long, lasx_count);
 
 #ifdef CONFIG_IPIPE
 
-#define laeu_enter_atomic()			\
-	({					\
-		unsigned long _flags;		\
-		_flags = hard_local_irq_save();	\
-		_flags;				\
+#define laeu_enter_atomic()				\
+	({						\
+		unsigned long _flags;			\
+		_flags = hard_preempt_disable();	\
+		_flags;					\
 	})
 
 #define laeu_exit_atomic(_flags)		\
 	({					\
-		hard_local_irq_restore(_flags);	\
+		hard_preempt_enable(_flags);	\
 	})
 
 #else

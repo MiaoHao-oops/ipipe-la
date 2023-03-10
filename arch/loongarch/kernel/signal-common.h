@@ -8,7 +8,7 @@
 #ifndef __SIGNAL_COMMON_H
 #define __SIGNAL_COMMON_H
 
-#include <asm/ipipe_hwirq.h>
+#include <linux/ipipe.h>
 
 /* #define DEBUG_SIG */
 
@@ -31,14 +31,14 @@ extern int fpcsr_pending(unsigned int __user *fpcsr);
 #define lock_fpu_owner()		\
 ({					\
 	unsigned long flags;		\
-	flags = hard_local_irq_save();	\
+	flags = hard_preempt_disable();	\
 	pagefault_disable();		\
 	flags;				\
 })
 #define unlock_fpu_owner(flags)		\
 ({					\
 	pagefault_enable();		\
-	hard_local_irq_restore(flags);	\
+	hard_preempt_enable(flags);	\
 })
 #else
 #define lock_fpu_owner()	({ preempt_disable(); pagefault_disable(); 0; })
