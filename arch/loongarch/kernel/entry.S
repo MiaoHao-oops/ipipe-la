@@ -166,6 +166,15 @@ SYM_CODE_START(syscall_exit_partial)
 #endif
 	local_irq_disable		# make sure need_resched doesn't
 					# change between and return
+#ifdef CONFIG_IPIPE
+	LONG_L	t1, tp, TSK_TI_IPIPE
+	li.w	t0, _TIP_HEAD
+	and	t0, t0, t1
+	beqz	t0, syscall_exit_noirq
+	// RESTORE_TEMP
+	b 	restore_partial
+#endif
+syscall_exit_noirq:
 	LONG_L	a2, tp, TI_FLAGS	# current->work
 	li.w	t0, _TIF_ALLWORK_MASK
 	and	t0, t0, a2

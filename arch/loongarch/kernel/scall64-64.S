@@ -95,10 +95,10 @@ syscall_common:
 	or	a2, sp, zero
 	bl	ipipe_handle_syscall
 
-	/* TODO: how to check illegal syscalls? */
+	/* FIXME: how to check illegal syscalls? */
 	bnez	a0, n64_syscall_finish
 
-	/* restore a* from kernel stack to do routine syscall */
+	/* restore a* from kernel stack to do common syscall */
 	cfi_ld	a0, PT_R4, 1
 	cfi_ld	a1, PT_R5, 1
 	cfi_ld	a2, PT_R6, 1
