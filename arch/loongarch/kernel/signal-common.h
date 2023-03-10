@@ -8,6 +8,8 @@
 #ifndef __SIGNAL_COMMON_H
 #define __SIGNAL_COMMON_H
 
+#include <asm/ipipe_hwirq.h>
+
 /* #define DEBUG_SIG */
 
 #ifdef DEBUG_SIG
@@ -25,8 +27,23 @@ extern void __user *get_sigframe(struct ksignal *ksig, struct pt_regs *regs,
 extern int fpcsr_pending(unsigned int __user *fpcsr);
 
 /* Make sure we will not lose FPU ownership */
-#define lock_fpu_owner()	({ preempt_disable(); pagefault_disable(); })
-#define unlock_fpu_owner()	({ pagefault_enable(); preempt_enable(); })
+#ifdef CONFIG_IPIPE
+#define lock_fpu_owner()		\
+({					\
+	unsigned long flags;		\
+	flags = hard_local_irq_save();	\
+	pagefault_disable();		\
+	flags;				\
+})
+#define unlock_fpu_owner(flags)		\
+({					\
+	pagefault_enable();		\
+	hard_local_irq_restore(flags);	\
+})
+#else
+#define lock_fpu_owner()	({ preempt_disable(); pagefault_disable(); 0; })
+#define unlock_fpu_owner(flags)	({ pagefault_enable(); preempt_enable(); })
+#endif
 
 /* Assembly functions to move context to/from the FPU */
 extern asmlinkage int

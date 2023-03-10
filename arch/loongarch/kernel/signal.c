@@ -277,9 +277,10 @@ static int protected_save_lbt_context(struct sigcontext __user *sc)
 	int err = 0;
 	uint64_t __user *scrregs = (uint64_t *)&sc->sc_scr;
 	uint32_t __user *eflags = (uint32_t *)&sc->sc_reserved;
+	unsigned long irqflags;
 
 	while (1) {
-		lock_fpu_owner();
+		irqflags = lock_fpu_owner();
 		if (thread_lbt_context_live()) {
 			if (is_lbt_owner()) {
 				save_lbt_context(sc);
@@ -288,7 +289,7 @@ static int protected_save_lbt_context(struct sigcontext __user *sc)
 			}
 		}
 
-		unlock_fpu_owner();
+		unlock_fpu_owner(irqflags);
 		if (likely(!err))
 			break;
 		/* touch the sigcontext and try again */
@@ -307,9 +308,10 @@ static int protected_restore_lbt_context(struct sigcontext __user *sc)
 	int err = 0, tmp;
 	uint64_t __user *scrregs = (uint64_t *)&sc->sc_scr;
 	uint32_t __user *eflags = (uint32_t *)&sc->sc_reserved;
+	unsigned long irqflags;
 
 	while (1) {
-		lock_fpu_owner();
+		irqflags = lock_fpu_owner();
 		if (thread_lbt_context_live()) {
 			if (is_lbt_owner()) {
 				restore_lbt_context(sc);
@@ -318,7 +320,7 @@ static int protected_restore_lbt_context(struct sigcontext __user *sc)
 			}
 		}
 
-		unlock_fpu_owner();
+		unlock_fpu_owner(irqflags);
 		if (likely(!err))
 			break;
 		/* touch the sigcontext and try again */
@@ -345,13 +347,14 @@ static int protected_save_fp_context(struct sigcontext __user *sc)
 	uint32_t __user *vcsr = &sc->sc_vcsr;
 	uint32_t __user *flags = &sc->sc_flags;
 	uint64_t __user *fpregs = (uint64_t *)&sc->sc_fpregs;
+	unsigned long irqflags;
 
 	used = used_math() ? USED_FP : 0;
 	if (!used)
 		goto fp_done;
 
 	while (1) {
-		lock_fpu_owner();
+		irqflags = lock_fpu_owner();
 		if (thread_lasx_context_live()) {
 			if (is_lasx_enabled()) {
 				err = save_lasx_context(sc);
@@ -375,7 +378,7 @@ static int protected_save_fp_context(struct sigcontext __user *sc)
 		else
 			err |= copy_fp_to_sigcontext(sc);
 finish:
-		unlock_fpu_owner();
+		unlock_fpu_owner(irqflags);
 		if (likely(!err))
 			break;
 		/* touch the sigcontext and try again */
@@ -401,6 +404,7 @@ static int protected_restore_fp_context(struct sigcontext __user *sc)
 	uint32_t __user *vcsr = &sc->sc_vcsr;
 	uint32_t __user *flags = &sc->sc_flags;
 	uint64_t __user *fpregs = (uint64_t *)&sc->sc_fpregs;
+	unsigned long irqflags;
 
 	err = __get_user(used, flags);
 	conditional_used_math(used & USED_FP);
@@ -423,7 +427,7 @@ static int protected_restore_fp_context(struct sigcontext __user *sc)
 	err = 0;
 
 	while (1) {
-		lock_fpu_owner();
+		irqflags = lock_fpu_owner();
 		if (thread_lasx_context_live()) {
 			if (is_lasx_enabled()) {
 				err = restore_lasx_context(sc);
@@ -449,7 +453,7 @@ static int protected_restore_fp_context(struct sigcontext __user *sc)
 		else
 			err |= copy_fp_from_sigcontext(sc);
 finish:
-		unlock_fpu_owner();
+		unlock_fpu_owner(irqflags);
 		if (likely(!err))
 			break;
 		/* touch the sigcontext and try again */
