@@ -771,7 +771,6 @@ asmlinkage void do_notify_resume(struct pt_regs *regs, void *unused,
 
 			user_enter();
 		}
-		hard_local_irq_disable();
 		thread_info_flags = READ_ONCE(current_thread_info()->flags);
 	} while (thread_info_flags & _TIF_WORK_MASK);
 
