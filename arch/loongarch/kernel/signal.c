@@ -748,10 +748,11 @@ asmlinkage void do_notify_resume(struct pt_regs *regs, void *unused,
 				hard_local_irq_enable();
 #else
 				hard_local_irq_disable();
-			}
 #endif
 
 			schedule();
+			hard_local_irq_disable();
+			thread_info_flags = READ_ONCE(current_thread_info()->flags);
 		} else {
 			local_irq_enable();
 
@@ -772,7 +773,6 @@ asmlinkage void do_notify_resume(struct pt_regs *regs, void *unused,
 
 			user_enter();
 		}
-		thread_info_flags = READ_ONCE(current_thread_info()->flags);
 	} while (thread_info_flags & _TIF_WORK_MASK);
 
 #ifdef CONFIG_IPIPE
