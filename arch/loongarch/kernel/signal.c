@@ -743,12 +743,13 @@ asmlinkage void do_notify_resume(struct pt_regs *regs, void *unused,
 #endif
 	do {
 		if (thread_info_flags & _TIF_NEED_RESCHED) {
-			if (IS_ENABLED(CONFIG_IPIPE)) {
+#ifdef CONFIG_IPIPE
 				local_irq_disable();
 				hard_local_irq_enable();
-			} else {
+#else
 				hard_local_irq_disable();
 			}
+#endif
 
 			schedule();
 		} else {
