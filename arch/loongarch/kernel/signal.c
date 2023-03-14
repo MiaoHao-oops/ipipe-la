@@ -4,6 +4,7 @@
 *
 * Author: Hanlu Li <lihanlu@loongson.cn>
 */
+#include "asm/thread_info.h"
 #include <linux/audit.h>
 #include <linux/cache.h>
 #include <linux/context_tracking.h>
@@ -740,24 +741,37 @@ asmlinkage void do_notify_resume(struct pt_regs *regs, void *unused,
 #ifdef CONFIG_IPIPE
 	bool stalled = irqs_disabled();
 #endif
-	local_irq_enable();
+	do {
+		if (thread_info_flags & _TIF_NEED_RESCHED) {
+			if (IS_ENABLED(CONFIG_IPIPE)) {
+				local_irq_disable();
+				hard_local_irq_enable();
+			} else {
+				hard_local_irq_disable();
+			}
 
-	user_exit();
+			schedule();
+		} else {
+			local_irq_enable();
 
-	if (thread_info_flags & _TIF_UPROBE)
-		uprobe_notify_resume(regs);
+			user_exit();
 
-	/* deal with pending signal delivery */
-	if (thread_info_flags & _TIF_SIGPENDING)
-		do_signal(regs);
+			if (thread_info_flags & _TIF_UPROBE)
+				uprobe_notify_resume(regs);
 
-	if (thread_info_flags & _TIF_NOTIFY_RESUME) {
-		clear_thread_flag(TIF_NOTIFY_RESUME);
-		tracehook_notify_resume(regs);
-		rseq_handle_notify_resume(NULL, regs);
-	}
+			/* deal with pending signal delivery */
+			if (thread_info_flags & _TIF_SIGPENDING)
+				do_signal(regs);
 
-	user_enter();
+			if (thread_info_flags & _TIF_NOTIFY_RESUME) {
+				clear_thread_flag(TIF_NOTIFY_RESUME);
+				tracehook_notify_resume(regs);
+				rseq_handle_notify_resume(NULL, regs);
+			}
+
+			user_enter();
+		}
+	} while (thread_info_flags & _TIF_WORK_MASK);
 
 #ifdef CONFIG_IPIPE
 	if (IS_ENABLED(CONFIG_IPIPE) && stalled)

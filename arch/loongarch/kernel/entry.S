@@ -134,6 +134,7 @@ restore_partial:		# restore partial frame
 	RESTORE_SP_AND_RET
 
 work_pending:
+#ifndef CONFIG_IPIPE
 	andi	t0, a2, _TIF_NEED_RESCHED # a2 is preloaded with TI_FLAGS
 	beqz	t0, work_notifysig
 work_resched:
@@ -149,7 +150,7 @@ work_resched:
 	beqz	t0, restore_all
 	andi	t0, a2, _TIF_NEED_RESCHED
 	bnez	t0, work_resched
-
+#endif
 work_notifysig:				# deal with pending signals and
 					# notify-resume requests
 	move	a0, sp
