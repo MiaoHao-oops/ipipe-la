@@ -213,7 +213,7 @@ asmlinkage void start_secondary(void)
 	mp_ops->smp_finish();
 
 #ifdef CONFIG_IPIPE
-       local_irq_enable();
+	local_irq_enable();
 #endif
 
 	cpu_startup_entry(CPUHP_AP_ONLINE_IDLE);

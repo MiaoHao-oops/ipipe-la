@@ -231,7 +231,6 @@ int memory_add_physaddr_to_nid(u64 start)
 EXPORT_SYMBOL_GPL(memory_add_physaddr_to_nid);
 #endif
 
-#ifdef CONFIG_MEMORY_HOTREMOVE
 void arch_remove_memory(int nid, u64 start,
 		u64 size, struct vmem_altmap *altmap)
 {
@@ -244,7 +243,6 @@ void arch_remove_memory(int nid, u64 start,
 		page += vmem_altmap_offset(altmap);
 	__remove_pages(start_pfn, nr_pages, altmap);
 }
-#endif
 #endif
 
 #ifdef CONFIG_SPARSEMEM_VMEMMAP
@@ -370,6 +368,7 @@ int __meminit arch_vmemmap_populate_basepages(unsigned long start,
 	return 0;
 }
 
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE
 int __meminit arch_vmemmap_populate_hugepages(unsigned long start,
 					 unsigned long end, int node)
 {
@@ -417,12 +416,21 @@ int __meminit arch_vmemmap_populate_hugepages(unsigned long start,
 
 	return 0;
 }
+#endif
 
+#ifdef CONFIG_TRANSPARENT_HUGEPAGE
 int __meminit vmemmap_populate(unsigned long start, unsigned long end, int node,
 		struct vmem_altmap *altmap)
 {
 	return arch_vmemmap_populate_hugepages(start, end, node);
 }
+#else
+int __meminit vmemmap_populate(unsigned long start, unsigned long end, int node,
+		struct vmem_altmap *altmap)
+{
+	return arch_vmemmap_populate_basepages(start, end, node);
+}
+#endif
 void vmemmap_free(unsigned long start, unsigned long end,
 		struct vmem_altmap *altmap)
 {
