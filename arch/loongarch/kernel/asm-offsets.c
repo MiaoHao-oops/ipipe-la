@@ -6,6 +6,7 @@
  */
 #include <asm/thread_info.h>
 #include <linux/compat.h>
+#include <linux/ipipe.h>
 #include <linux/types.h>
 #include <linux/sched.h>
 #include <linux/mm.h>
@@ -80,6 +81,15 @@ void output_task_defines(void)
 	DEFINE(TASK_STRUCT_SIZE, sizeof(struct task_struct));
 	BLANK();
 }
+
+#ifdef CONFIG_IPIPE
+void output_ipipe_percpu_data_defines(void)
+{
+	COMMENT("LoongArch ipipe_percpu_data offsets.");
+	OFFSET(IPD_ROOT, ipipe_percpu_data, root);
+	OFFSET(IPD_HEAD, ipipe_percpu_data, head);
+}
+#endif
 
 void output_thread_info_defines(void)
 {

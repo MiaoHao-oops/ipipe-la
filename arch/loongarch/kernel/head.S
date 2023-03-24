@@ -57,7 +57,12 @@ SYM_CODE_START(kernel_entry)			# kernel entry point
 0:
 #ifdef CONFIG_VIRQ_FLAG_OPT
 	la	t0, ipipe_percpu
-	csrwr	t0, LOONGARCH_CSR_KS6
+	li.d	t1, IPD_ROOT
+	add.d	t1, t0, t1
+	csrwr	t1, LOONGARCH_CSR_KS6
+	li.d	t1, IPD_HEAD
+	add.d	t1, t0, t1
+	csrwr	t1, LOONGARCH_CSR_KS7
 #endif
 
 #ifdef CONFIG_USE_OF
