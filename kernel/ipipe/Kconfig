@@ -45,3 +45,8 @@ if IPIPE && ARM && RAW_PRINTK && !DEBUG_LL
 comment "CAUTION: DEBUG_LL must be selected, and properly configured for"
 comment "RAW_PRINTK to work. Otherwise, you will get no output on raw_printk()"
 endif
+
+if IPIPE && LOONGARCH
+config VIRQ_FLAG_OPT
+	bool "Virq flage CSR quick access support"
+endif

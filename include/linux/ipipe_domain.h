@@ -149,7 +149,7 @@ struct ipipe_percpu_domain_data {
 	unsigned long irqall[IPIPE_NR_IRQS];
 	struct ipipe_domain *domain;
 	int coflags;
-};
+} __attribute__((aligned(2048)));
 
 struct ipipe_percpu_data {
 	struct ipipe_percpu_domain_data root;
@@ -221,7 +221,11 @@ ipipe_this_cpu_context(struct ipipe_domain *ipd)
 static inline struct ipipe_percpu_domain_data *
 ipipe_this_cpu_root_context(void)
 {
+#ifdef CONFIG_VIRQ_FLAG_OPT
+	return arch_ipipe_this_cpu_root_context();
+#else
 	return __ipipe_raw_cpu_ptr(&ipipe_percpu.root);
+#endif
 }
 
 /**
@@ -240,7 +244,11 @@ ipipe_this_cpu_root_context(void)
 static inline struct ipipe_percpu_domain_data *
 ipipe_this_cpu_head_context(void)
 {
+#ifdef CONFIG_VIRQ_FLAG_OPT
+	return arch_ipipe_this_cpu_head_context();
+#else
 	return __ipipe_raw_cpu_ptr(&ipipe_percpu.head);
+#endif
 }
 
 /**

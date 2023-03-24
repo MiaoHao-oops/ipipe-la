@@ -166,12 +166,21 @@ void register_smp_ops(const struct plat_smp_ops *ops)
 asmlinkage void start_secondary(void)
 {
 	unsigned int cpu = smp_processor_id();
+#ifdef CONFIG_VIRQ_FLAG_OPT
+	struct ipipe_percpu_data *p;
+#endif
 
 	sync_counter();
 	/* Do not use any processes that depend on percpu(r21) before here
 	* For example, printk().
 	*/
 	set_my_cpu_offset(per_cpu_offset(cpu));
+
+#ifdef CONFIG_VIRQ_FLAG_OPT
+	p = &per_cpu(ipipe_percpu, cpu);
+	arch_set_root_context(&p->root);
+	arch_set_head_context(&p->head);
+#endif
 
 	cpu_probe();
 	pr_info("CPU%d __my_cpu_offset: %lx\n", cpu, per_cpu_offset(cpu));

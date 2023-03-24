@@ -186,6 +186,15 @@ static inline int arch_demangle_irq_bits(unsigned long *x)
 	return virt;
 }
 
+#ifdef CONFIG_VIRQ_FLAG_OPT
+#define arch_set_root_context(ptr) csr_writeq((u64)(ptr), LOONGARCH_CSR_KS6)
+#define arch_set_head_context(ptr) csr_writeq((u64)(ptr), LOONGARCH_CSR_KS7)
+	
+
+#define arch_ipipe_this_cpu_root_context() (struct ipipe_percpu_domain_data *)csr_readq(LOONGARCH_CSR_KS6)
+#define arch_ipipe_this_cpu_head_context() (struct ipipe_percpu_domain_data *)csr_readq(LOONGARCH_CSR_KS7)
+#endif
+
 #endif /* !CONFIG_IPIPE */
 
 #endif /* _ASM_LOONGARCH_IPIPE_HWIRQ_H */

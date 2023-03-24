@@ -277,6 +277,11 @@ static inline void fixup_percpu_data(void)
 	BUG_ON(smp_processor_id() || !irqs_disabled());
 
 	per_cpu(ipipe_percpu, 0).root = bootup_context;
+#ifdef CONFIG_VIRQ_FLAG_OPT
+	p = &per_cpu(ipipe_percpu, 0);
+	arch_set_root_context(&p->root);
+	arch_set_head_context(&p->head);
+#endif
 
 	for_each_possible_cpu(cpu) {
 		p = &per_cpu(ipipe_percpu, cpu);

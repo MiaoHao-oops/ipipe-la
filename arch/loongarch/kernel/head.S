@@ -55,6 +55,11 @@ SYM_CODE_START(kernel_entry)			# kernel entry point
 	la.abs	t0, 0f
 	jirl	zero, t0, 0
 0:
+#ifdef CONFIG_VIRQ_FLAG_OPT
+	la	t0, ipipe_percpu
+	csrwr	t0, LOONGARCH_CSR_KS6
+#endif
+
 #ifdef CONFIG_USE_OF
 
 	li.d		t1, -2
