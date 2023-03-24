@@ -79,10 +79,8 @@ SYM_FUNC_START(except_vec_vi_handler)
 	 */
 	la		t1, irq_nesting
 	LONG_ADDU	t1, t1, $r21
-	LONG_L		t0, t1, 0
-	addi.w		t0, t0, 1
-	LONG_S		t0, t1, 0
-	addi.w		t0, t0, -1
+	li.w		t2, 1
+	amadd.w		t0, t2, t1
 	bnez		t0, 2f
 #endif
 
@@ -113,9 +111,8 @@ SYM_FUNC_START(except_vec_vi_handler)
 	move	sp, s1
 	la		t1, irq_nesting
 	LONG_ADDU	t1, t1, $r21
-	LONG_L		t0, t1, 0
-	addi.w		t0, t0, -1
-	LONG_S		t0, t1, 0
+	li.w		t2, -1
+	amadd.w		t0, t2, t1
 
 	la	t0, ret_from_irq
 	jirl    zero, t0, 0
