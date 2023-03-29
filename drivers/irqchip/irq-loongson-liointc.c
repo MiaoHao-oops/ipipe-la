@@ -70,7 +70,9 @@ static void liointc_chained_handle_irq(struct irq_desc *desc)
 
 	while (pending) {
 		int bit = __ffs(pending);
-		ipipe_handle_demuxed_irq(irq_find_mapping(gc->domain, bit));
+		int virq = irq_find_mapping(gc->domain, bit);
+		if (virq > 0)
+			ipipe_handle_demuxed_irq(virq);
 		pending &= ~BIT(bit);
 	}
 
