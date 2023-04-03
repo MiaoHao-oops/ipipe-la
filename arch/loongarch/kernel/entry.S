@@ -56,6 +56,13 @@ resume_userspace:
 	local_irq_disable		# make sure we dont miss an
 					# interrupt setting need_resched
 					# between sampling and return
+#ifdef CONFIG_IPIPE
+	LONG_L	t0, tp, TSK_TI_IPIPE
+	andi	t0, t0, _TIP_HEAD
+	beqz	t0, irq_ret_noirq
+	b 	restore_all
+#endif
+irq_ret_noirq:
 	LONG_L	a2, tp, TI_FLAGS	# current->work
 	andi	t0, a2, _TIF_WORK_MASK	# (ignoring syscall_trace)
 	bnez	t0, work_pending
