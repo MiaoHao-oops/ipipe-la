@@ -127,7 +127,8 @@ void ipipe_host_timer_register(struct clock_event_device *evtdev)
 	if (timer->rating == 0)
 		timer->rating = evtdev->rating;
 
-	timer->freq = (1000000000ULL * evtdev->mult) >> evtdev->shift;
+	if (timer->freq == 0)
+		timer->freq = (1000000000ULL * evtdev->mult) >> evtdev->shift;
 
 	if (timer->min_delay_ticks == 0)
 		timer->min_delay_ticks =
