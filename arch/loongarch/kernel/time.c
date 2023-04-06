@@ -195,6 +195,7 @@ int constant_clockevent_init(void)
 #ifdef CONFIG_IPIPE
 	cd->ipipe_timer = raw_cpu_ptr(&arch_itimer);
 	cd->ipipe_timer->irq = cd->irq;
+	cd->ipipe_timer->freq = const_clock_freq;
 	cd->ipipe_timer->ack = loongarch_ipipe_itimer_ack;
 #endif
 
