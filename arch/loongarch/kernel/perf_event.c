@@ -11,6 +11,7 @@
  * published by the Free Software Foundation.
  */
 
+#include "asm/ipipe_hwirq.h"
 #include <linux/cpumask.h>
 #include <linux/interrupt.h>
 #include <linux/smp.h>
@@ -831,6 +832,9 @@ void pmu_handle_irq(int irq)
 	struct pt_regs *regs;
 	struct perf_sample_data data;
 	struct cpu_hw_events *cpuc = this_cpu_ptr(&cpu_hw_events);
+#ifdef CONFIG_IPIPE
+	unsigned long flags;
+#endif
 
 	/*
 	 * First we pause the local counters, so that when we are locked
@@ -868,8 +872,14 @@ void pmu_handle_irq(int irq)
 	 * in here because the performance counter interrupt is a regular
 	 * interrupt, not NMI.
 	 */
+#ifdef CONFIG_IPIPE
+	flags = arch_local_irq_save();
+#endif
 	if (handled == IRQ_HANDLED)
 		irq_work_run();
+#ifdef CONFIG_IPIPE
+	arch_local_irq_restore(flags);
+#endif
 }
 
 static const struct loongarch_perf_event *loongarch_pmu_map_raw_event(u64 config)
