@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include "linux/printk.h"
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/version.h>
@@ -73,6 +74,7 @@ struct ipipe_trace_point {
 	unsigned long parent_eip;
 	unsigned long v;
 	unsigned long long timestamp;
+	unsigned long long exit_time;
 };
 
 struct ipipe_trace_path {
@@ -393,6 +395,8 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 				      old_tp->nmi_saved_parent_eip,
 				      old_tp->nmi_saved_v);
 	}
+
+	ipipe_read_tsc(point->exit_time);
 
 	hard_local_irq_restore_notrace(flags);
 }
@@ -841,14 +845,19 @@ static void
 __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 {
 	unsigned long delay = 0;
+	unsigned long overhead = 0;
 	int next;
 	char *mark = "  ";
 
 	next = WRAP_POINT_NO(point+1 - print_path->point);
 
-	if (next != print_path->trace_pos)
+	if (next != print_path->trace_pos) {
 		delay = ipipe_tsc2ns(print_path->point[next].timestamp -
 				     point->timestamp);
+		overhead = ipipe_tsc2ns(point->exit_time -
+				     point->timestamp);
+	}
+		
 
 	if (__ipipe_in_critical_trpath(point - print_path->point)) {
 		if (delay > IPIPE_DELAY_WARN)
@@ -859,7 +868,8 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 	seq_puts(m, mark);
 
 	if (verbose_trace)
-		seq_printf(m, "%3lu.%03lu%c ", delay/1000, delay%1000,
+		seq_printf(m, "%3lu.%03lu(%3lu.%03lu)%c ", delay/1000, delay%1000,
+			   overhead/1000, overhead%1000,
 			   (point->flags & IPIPE_TFLG_NMI_HIT) ? 'N' : ' ');
 	else
 		seq_puts(m, " ");
