@@ -820,6 +820,8 @@ void do_vi(int irq)
 {
 	vi_handler_t	action;
 
+	mmiowb();
+
 	action = ip_handlers[irq];
 	if (action)
 		action(irq);
