@@ -4,6 +4,7 @@
 *
 * Author: Hanlu Li <lihanlu@loongson.cn>
 */
+#include "asm/ipipe_hwirq.h"
 #include "asm/thread_info.h"
 #include <linux/audit.h>
 #include <linux/cache.h>
@@ -742,9 +743,8 @@ asmlinkage void do_notify_resume(struct pt_regs *regs, void *unused,
 	bool stalled = irqs_disabled();
 #endif
 
+	hard_local_irq_enable();
 	local_irq_enable();
-
-	user_exit();
 
 	if (thread_info_flags & _TIF_UPROBE)
 		uprobe_notify_resume(regs);
@@ -759,7 +759,7 @@ asmlinkage void do_notify_resume(struct pt_regs *regs, void *unused,
 		rseq_handle_notify_resume(NULL, regs);
 	}
 
-	user_enter();
+	hard_local_irq_disable();
 
 #ifdef CONFIG_IPIPE
 	if (IS_ENABLED(CONFIG_IPIPE) && stalled)

@@ -2,6 +2,7 @@
 #ifndef _ASM_GENERIC_RWSEM_H
 #define _ASM_GENERIC_RWSEM_H
 
+#include "asm/ftrace.h"
 #ifndef _LINUX_RWSEM_H
 #error "Please don't include <asm/rwsem.h> directly, use <linux/rwsem.h> instead."
 #endif
@@ -108,6 +109,8 @@ static inline void __up_read(struct rw_semaphore *sem)
 	*(long *)(&sem->count) = tmp;
 	if (unlikely(tmp < -1 && (tmp & RWSEM_ACTIVE_MASK) == 0))
 		rwsem_wake(sem);
+
+	_mcount();
 }
 
 /*

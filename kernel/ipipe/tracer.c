@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include "asm/loongarchregs.h"
 #include "linux/printk.h"
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -75,6 +76,8 @@ struct ipipe_trace_point {
 	unsigned long v;
 	unsigned long long timestamp;
 	unsigned long long exit_time;
+	unsigned long long era;
+	unsigned long long prmd;
 };
 
 struct ipipe_trace_path {
@@ -321,6 +324,9 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	point->eip = eip;
 	point->parent_eip = parent_eip;
 	point->v = v;
+	point->era = csr_readq(LOONGARCH_CSR_ERA);
+	point->prmd = csr_readq(LOONGARCH_CSR_PRMD);
+
 	ipipe_read_tsc(point->timestamp);
 
 	__ipipe_store_domain_states(point);
@@ -868,8 +874,8 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 	seq_puts(m, mark);
 
 	if (verbose_trace)
-		seq_printf(m, "%3lu.%03lu(%3lu.%03lu)%c ", delay/1000, delay%1000,
-			   overhead/1000, overhead%1000,
+		seq_printf(m, "%3lu.%03lu(%3lu.%03lu)0x%llx/0x%llx/%c ", delay/1000, delay%1000,
+			   overhead/1000, overhead%1000, point->era, point->prmd,
 			   (point->flags & IPIPE_TFLG_NMI_HIT) ? 'N' : ' ');
 	else
 		seq_puts(m, " ");
