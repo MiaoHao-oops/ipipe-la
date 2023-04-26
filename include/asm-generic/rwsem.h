@@ -102,7 +102,10 @@ static inline void __up_read(struct rw_semaphore *sem)
 {
 	long tmp;
 
-	tmp = atomic_long_dec_return_release(&sem->count);
+	// tmp = atomic_long_dec_return_release(&sem->count);
+	tmp = *(long *)(&sem->count);
+	tmp = tmp - 1;
+	*(long *)(&sem->count) = tmp;
 	if (unlikely(tmp < -1 && (tmp & RWSEM_ACTIVE_MASK) == 0))
 		rwsem_wake(sem);
 }
