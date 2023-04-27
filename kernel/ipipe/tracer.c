@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include "asm/loongarchregs.h"
-#include "linux/printk.h"
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/version.h>
@@ -80,6 +78,7 @@ struct ipipe_trace_point {
 	unsigned long long prmd;
 	unsigned long long tcfg;
 	unsigned long long tval;
+	pid_t pid;
 };
 
 struct ipipe_trace_path {
@@ -335,6 +334,7 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	point->eip = eip;
 	point->parent_eip = parent_eip;
 	point->v = v;
+	point->pid = current_thread_info()->task->pid;
 	dump_loongarch_csr(point);
 
 	ipipe_read_tsc(point->timestamp);
@@ -864,6 +864,7 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 	unsigned long overhead = 0;
 	unsigned long long ticks = 0, initval = 0, era;
 	bool kernel = 0, timer_enable = 0, periodic = 0;
+	pid_t pid = 0;
 	int next;
 	char *mark = "  ";
 
@@ -880,6 +881,7 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 		timer_enable = (point->tcfg & 0x1) != 0;
 		periodic = (point->tcfg & 0x2) != 0;
 		era = point->era;
+		pid = point->pid;
 	}
 		
 
@@ -892,9 +894,9 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 	seq_puts(m, mark);
 
 	if (verbose_trace)
-		seq_printf(m, "%3lu.%03lu(%3lu.%03lu)0x%llx/%c%c%c/0x%llx/0x%llx/%c ", delay/1000, delay%1000,
-			   overhead/1000, overhead%1000, era, kernel ? 'U' : 'K', timer_enable ? 'e' : 'd',
-			   periodic ? 'p' : 'o', initval, ticks,
+		seq_printf(m, "%3lu.%03lu(%3lu.%03lu)%3d/0x%llx/%c%c%c/0x%llx/0x%llx/%c ", delay/1000, delay%1000,
+			   overhead/1000, overhead%1000, pid, era, kernel ? 'K' : 'U', timer_enable ? 'E' : 'D',
+			   periodic ? 'P' : 'O', initval, ticks,
 			   (point->flags & IPIPE_TFLG_NMI_HIT) ? 'N' : ' ');
 	else
 		seq_puts(m, " ");

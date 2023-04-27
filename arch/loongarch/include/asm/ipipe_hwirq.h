@@ -35,13 +35,13 @@
 static inline void hard_local_irq_disable_notrace(void)
 {
 	// disable global interrupt
-	csr_xchgl(0, CSR_CRMD_IE, LOONGARCH_CSR_CRMD);
+	csr_xchgq(0, CSR_CRMD_IE, LOONGARCH_CSR_CRMD);
 }
 
 static inline void hard_local_irq_enable_notrace(void)
 {
 	// enable global interrupt
-	csr_xchgl(CSR_CRMD_IE, CSR_CRMD_IE, LOONGARCH_CSR_CRMD);
+	csr_xchgq(CSR_CRMD_IE, CSR_CRMD_IE, LOONGARCH_CSR_CRMD);
 }
 
 /*
@@ -57,13 +57,13 @@ static inline void hard_local_fiq_enable_notrace(void)
 static inline unsigned long hard_local_irq_save_notrace(void)
 {
 	// diable global interrupt and return the old value of crmd.ie
-	return csr_xchgl(0, CSR_CRMD_IE, LOONGARCH_CSR_CRMD);
+	return csr_xchgq(0, CSR_CRMD_IE, LOONGARCH_CSR_CRMD);
 }
 
 static inline void hard_local_irq_restore_notrace(unsigned long flags)
 {
 	// write crmd.ie with value specified by flags on corresponding bit
-	csr_xchgl(flags, CSR_CRMD_IE, LOONGARCH_CSR_CRMD);
+	csr_xchgq(flags, CSR_CRMD_IE, LOONGARCH_CSR_CRMD);
 }
 
 static inline int arch_irqs_disabled_flags(unsigned long flags)
@@ -74,7 +74,7 @@ static inline int arch_irqs_disabled_flags(unsigned long flags)
 static inline unsigned long hard_local_save_flags(void)
 {
 	// return the value of crmd
-	return csr_readl(LOONGARCH_CSR_CRMD);
+	return csr_readq(LOONGARCH_CSR_CRMD);
 }
 
 #define hard_irqs_disabled_flags(flags) arch_irqs_disabled_flags(flags)
