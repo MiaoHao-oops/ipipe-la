@@ -286,9 +286,9 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	unsigned long long enter_time;
 	int cpu;
 
-	flags = hard_local_irq_save_notrace();
-
 	ipipe_read_tsc(enter_time);
+
+	flags = hard_local_irq_save_notrace();
 
 	cpu = ipipe_processor_id();
  restart:
