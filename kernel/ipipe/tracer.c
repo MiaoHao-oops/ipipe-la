@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include "asm/ipipe.h"
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/version.h>
@@ -73,6 +74,7 @@ struct ipipe_trace_point {
 	unsigned long parent_eip;
 	unsigned long v;
 	unsigned long long timestamp;
+	unsigned long long enter_time;
 	unsigned long long exit_time;
 	unsigned long long era;
 	unsigned long long prmd;
@@ -281,9 +283,12 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	int pos, next_pos, begin;
 	struct ipipe_trace_point *point;
 	unsigned long flags;
+	unsigned long long enter_time;
 	int cpu;
 
 	flags = hard_local_irq_save_notrace();
+
+	ipipe_read_tsc(enter_time);
 
 	cpu = ipipe_processor_id();
  restart:
@@ -335,6 +340,7 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	point->parent_eip = parent_eip;
 	point->v = v;
 	point->pid = current_thread_info()->task->pid;
+	point->enter_time = enter_time;
 	dump_loongarch_csr(point);
 
 	ipipe_read_tsc(point->timestamp);
@@ -874,7 +880,7 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 		delay = ipipe_tsc2ns(print_path->point[next].timestamp -
 				     point->timestamp);
 		overhead = ipipe_tsc2ns(point->exit_time -
-				     point->timestamp);
+				     point->enter_time);
 		ticks = point->tval;
 		initval = (point->tcfg >> 2) << 2;
 		kernel = (point->prmd & 0x3) == 0;
