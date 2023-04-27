@@ -78,6 +78,8 @@ struct ipipe_trace_point {
 	unsigned long long exit_time;
 	unsigned long long era;
 	unsigned long long prmd;
+	unsigned long long tcfg;
+	unsigned long long tval;
 };
 
 struct ipipe_trace_path {
@@ -263,6 +265,15 @@ __ipipe_trace_freeze(int cpu, struct ipipe_trace_path *tp, int pos)
 	return tp;
 }
 
+static inline void notrace
+dump_loongarch_csr(struct ipipe_trace_point *point)
+{
+	point->era = csr_readq(LOONGARCH_CSR_ERA);
+	point->prmd = csr_readq(LOONGARCH_CSR_PRMD);
+	point->tcfg = csr_readq(LOONGARCH_CSR_TCFG);
+	point->tval = csr_readq(LOONGARCH_CSR_TVAL);
+}
+
 void notrace
 __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	      unsigned long parent_eip, unsigned long v)
@@ -324,8 +335,7 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	point->eip = eip;
 	point->parent_eip = parent_eip;
 	point->v = v;
-	point->era = csr_readq(LOONGARCH_CSR_ERA);
-	point->prmd = csr_readq(LOONGARCH_CSR_PRMD);
+	dump_loongarch_csr(point);
 
 	ipipe_read_tsc(point->timestamp);
 
@@ -852,6 +862,8 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 {
 	unsigned long delay = 0;
 	unsigned long overhead = 0;
+	unsigned long long ticks = 0, initval = 0, era;
+	bool kernel = 0, timer_enable = 0, periodic = 0;
 	int next;
 	char *mark = "  ";
 
@@ -862,6 +874,12 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 				     point->timestamp);
 		overhead = ipipe_tsc2ns(point->exit_time -
 				     point->timestamp);
+		ticks = point->tval;
+		initval = (point->tcfg >> 2) << 2;
+		kernel = (point->prmd & 0x3) == 0;
+		timer_enable = (point->tcfg & 0x1) != 0;
+		periodic = (point->tcfg & 0x2) != 0;
+		era = point->era;
 	}
 		
 
@@ -874,8 +892,9 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 	seq_puts(m, mark);
 
 	if (verbose_trace)
-		seq_printf(m, "%3lu.%03lu(%3lu.%03lu)0x%llx/0x%llx/%c ", delay/1000, delay%1000,
-			   overhead/1000, overhead%1000, point->era, point->prmd,
+		seq_printf(m, "%3lu.%03lu(%3lu.%03lu)0x%llx/%c%c%c/0x%llx/0x%llx/%c ", delay/1000, delay%1000,
+			   overhead/1000, overhead%1000, era, kernel ? 'U' : 'K', timer_enable ? 'e' : 'd',
+			   periodic ? 'p' : 'o', initval, ticks,
 			   (point->flags & IPIPE_TFLG_NMI_HIT) ? 'N' : ' ');
 	else
 		seq_puts(m, " ");
