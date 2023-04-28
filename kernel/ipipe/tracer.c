@@ -20,7 +20,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include "asm/ipipe.h"
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/version.h>
@@ -74,13 +73,6 @@ struct ipipe_trace_point {
 	unsigned long parent_eip;
 	unsigned long v;
 	unsigned long long timestamp;
-	unsigned long long enter_time;
-	unsigned long long exit_time;
-	unsigned long long era;
-	unsigned long long prmd;
-	unsigned long long tcfg;
-	unsigned long long tval;
-	pid_t pid;
 };
 
 struct ipipe_trace_path {
@@ -266,15 +258,6 @@ __ipipe_trace_freeze(int cpu, struct ipipe_trace_path *tp, int pos)
 	return tp;
 }
 
-static inline void notrace
-dump_loongarch_csr(struct ipipe_trace_point *point)
-{
-	point->era = csr_readq(LOONGARCH_CSR_ERA);
-	point->prmd = csr_readq(LOONGARCH_CSR_PRMD);
-	point->tcfg = csr_readq(LOONGARCH_CSR_TCFG);
-	point->tval = csr_readq(LOONGARCH_CSR_TVAL);
-}
-
 void notrace
 __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	      unsigned long parent_eip, unsigned long v)
@@ -283,10 +266,7 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	int pos, next_pos, begin;
 	struct ipipe_trace_point *point;
 	unsigned long flags;
-	unsigned long long enter_time;
 	int cpu;
-
-	ipipe_read_tsc(enter_time);
 
 	flags = hard_local_irq_save_notrace();
 
@@ -339,9 +319,6 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	point->eip = eip;
 	point->parent_eip = parent_eip;
 	point->v = v;
-	point->pid = current_thread_info()->task->pid;
-	point->enter_time = enter_time;
-	dump_loongarch_csr(point);
 
 	ipipe_read_tsc(point->timestamp);
 
@@ -417,8 +394,6 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 				      old_tp->nmi_saved_parent_eip,
 				      old_tp->nmi_saved_v);
 	}
-
-	ipipe_read_tsc(point->exit_time);
 
 	hard_local_irq_restore_notrace(flags);
 }
@@ -867,10 +842,6 @@ static void
 __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 {
 	unsigned long delay = 0;
-	unsigned long overhead = 0;
-	unsigned long long ticks = 0, initval = 0, era;
-	bool kernel = 0, timer_enable = 0, periodic = 0;
-	pid_t pid = 0;
 	int next;
 	char *mark = "  ";
 
@@ -879,15 +850,6 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 	if (next != print_path->trace_pos) {
 		delay = ipipe_tsc2ns(print_path->point[next].timestamp -
 				     point->timestamp);
-		overhead = ipipe_tsc2ns(point->exit_time -
-				     point->enter_time);
-		ticks = point->tval;
-		initval = (point->tcfg >> 2) << 2;
-		kernel = (point->prmd & 0x3) == 0;
-		timer_enable = (point->tcfg & 0x1) != 0;
-		periodic = (point->tcfg & 0x2) != 0;
-		era = point->era;
-		pid = point->pid;
 	}
 		
 
@@ -900,9 +862,7 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 	seq_puts(m, mark);
 
 	if (verbose_trace)
-		seq_printf(m, "%3lu.%03lu(%3lu.%03lu)%3d/0x%llx/%c%c%c/0x%llx/0x%llx/%c ", delay/1000, delay%1000,
-			   overhead/1000, overhead%1000, pid, era, kernel ? 'K' : 'U', timer_enable ? 'E' : 'D',
-			   periodic ? 'P' : 'O', initval, ticks,
+		seq_printf(m, "%3lu.%03lu%c ", delay/1000, delay%1000,
 			   (point->flags & IPIPE_TFLG_NMI_HIT) ? 'N' : ' ');
 	else
 		seq_puts(m, " ");
