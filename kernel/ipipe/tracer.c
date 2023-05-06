@@ -73,6 +73,10 @@ struct ipipe_trace_point {
 	unsigned long parent_eip;
 	unsigned long v;
 	unsigned long long timestamp;
+#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
+	unsigned long long enter_time;
+	unsigned long long exit_time;
+#endif
 };
 
 struct ipipe_trace_path {
@@ -268,6 +272,11 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	unsigned long flags;
 	int cpu;
 
+#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
+	unsigned long long enter_time;
+	ipipe_read_tsc(enter_time);
+#endif
+
 	flags = hard_local_irq_save_notrace();
 
 	cpu = ipipe_processor_id();
@@ -319,6 +328,9 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	point->eip = eip;
 	point->parent_eip = parent_eip;
 	point->v = v;
+#ifdef IPIPE_TRACE_OVERHEAD
+	point->enter_time = enter_time;
+#endif
 
 	ipipe_read_tsc(point->timestamp);
 
@@ -396,6 +408,10 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	}
 
 	hard_local_irq_restore_notrace(flags);
+
+#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
+	ipipe_read_tsc(point->exit_time);
+#endif
 }
 
 static unsigned long __ipipe_global_path_lock(void)
@@ -844,12 +860,19 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 	unsigned long delay = 0;
 	int next;
 	char *mark = "  ";
+#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
+	unsigned long long overhead;
+#endif
 
 	next = WRAP_POINT_NO(point+1 - print_path->point);
 
 	if (next != print_path->trace_pos) {
 		delay = ipipe_tsc2ns(print_path->point[next].timestamp -
 				     point->timestamp);
+#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
+		overhead = ipipe_tsc2ns(point->exit_time -
+					point->enter_time);
+#endif
 	}
 		
 
@@ -862,8 +885,16 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 	seq_puts(m, mark);
 
 	if (verbose_trace)
-		seq_printf(m, "%3lu.%03lu%c ", delay/1000, delay%1000,
-			   (point->flags & IPIPE_TFLG_NMI_HIT) ? 'N' : ' ');
+		seq_printf(m, "%3lu.%03lu%c "
+#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
+		"(%3lu.%03lu)"
+#endif
+		, delay/1000, delay%1000,
+			   (point->flags & IPIPE_TFLG_NMI_HIT) ? 'N' : ' '
+#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
+		, overhead/1000, overhead%1000
+#endif
+		);
 	else
 		seq_puts(m, " ");
 }
