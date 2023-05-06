@@ -328,17 +328,13 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	point->eip = eip;
 	point->parent_eip = parent_eip;
 	point->v = v;
-#ifdef IPIPE_TRACE_OVERHEAD
+#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
 	point->enter_time = enter_time;
 #endif
 
 	ipipe_read_tsc(point->timestamp);
 
 	__ipipe_store_domain_states(point);
-
-#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
-	ipipe_read_tsc(point->exit_time);
-#endif
 
 	/* forward to next point buffer */
 	next_pos = WRAP_POINT_NO(pos+1);
@@ -412,6 +408,10 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	}
 
 	hard_local_irq_restore_notrace(flags);
+
+#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
+	ipipe_read_tsc(point->exit_time);
+#endif
 }
 
 static unsigned long __ipipe_global_path_lock(void)
