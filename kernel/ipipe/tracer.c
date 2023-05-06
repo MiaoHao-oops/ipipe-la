@@ -407,11 +407,10 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 				      old_tp->nmi_saved_v);
 	}
 
-	hard_local_irq_restore_notrace(flags);
-
 #ifdef CONFIG_IPIPE_TRACE_OVERHEAD
 	ipipe_read_tsc(point->exit_time);
 #endif
+	hard_local_irq_restore_notrace(flags);
 }
 
 static unsigned long __ipipe_global_path_lock(void)
