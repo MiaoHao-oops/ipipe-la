@@ -861,7 +861,7 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 	int next;
 	char *mark = "  ";
 #ifdef CONFIG_IPIPE_TRACE_OVERHEAD
-	unsigned long long overhead;
+	unsigned long overhead = 0;
 #endif
 
 	next = WRAP_POINT_NO(point+1 - print_path->point);
