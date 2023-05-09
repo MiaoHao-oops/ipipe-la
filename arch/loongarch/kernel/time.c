@@ -170,7 +170,7 @@ int constant_clockevent_init(void)
 {
 	unsigned int irq;
 	unsigned int cpu = smp_processor_id();
-	unsigned long min_delta = 0x4;
+	unsigned long min_delta = 0x600;
 	unsigned long max_delta = (1UL << 48) - 1;
 	struct clock_event_device *cd;
 	static int timer_irq_installed = 0;
@@ -196,6 +196,7 @@ int constant_clockevent_init(void)
 	cd->ipipe_timer = raw_cpu_ptr(&arch_itimer);
 	cd->ipipe_timer->irq = cd->irq;
 	cd->ipipe_timer->freq = const_clock_freq;
+	cd->ipipe_timer->min_delay_ticks = 0x4;
 	cd->ipipe_timer->ack = loongarch_ipipe_itimer_ack;
 #endif
 
