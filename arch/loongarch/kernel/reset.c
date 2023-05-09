@@ -51,7 +51,9 @@ void machine_power_off(void)
 	preempt_disable();
 	smp_send_stop();
 #endif
+#ifdef CONFIG_SUSPEND
 	enable_pcie_wakeup();
+#endif
 	pm_power_off();
 }
 
