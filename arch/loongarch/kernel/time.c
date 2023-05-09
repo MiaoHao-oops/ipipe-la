@@ -170,7 +170,7 @@ int constant_clockevent_init(void)
 {
 	unsigned int irq;
 	unsigned int cpu = smp_processor_id();
-	unsigned long min_delta = 0x600;
+	unsigned long min_delta = 0x4;
 	unsigned long max_delta = (1UL << 48) - 1;
 	struct clock_event_device *cd;
 	static int timer_irq_installed = 0;
