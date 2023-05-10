@@ -119,7 +119,7 @@ int arch_dup_task_struct(struct task_struct *dst, struct task_struct *src)
 			save_lasx(current);
 		else if (is_lsx_enabled())
 			save_lsx(current);
-		else
+		else if (is_fp_enabled())
 			save_fp(current);
 	}
 
