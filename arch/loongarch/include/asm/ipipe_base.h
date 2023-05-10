@@ -56,7 +56,7 @@
 #endif /* !CONFIG_SMP */
 
 /* LoongArch64 traps */
-#define IPIPE_TRAP_MAYDAY        0	/* Internal recovery trap */
+#define IPIPE_TRAP_MAYDAY	 0	/* Internal recovery trap */
 #define IPIPE_TRAP_ACCESS	 1	/* Data or instruction access exception */
 #define IPIPE_TRAP_SECTION	 2	/* Section fault */
 #define IPIPE_TRAP_DABT		 3	/* Generic data abort */
@@ -68,7 +68,7 @@
 #define IPIPE_TRAP_FPU_EXC	 9	/* Floating point exception */
 #define IPIPE_TRAP_RI		 10	/* Reserved instruction */
 #define IPIPE_TRAP_ALIGNMENT	 11	/* Unaligned access exception */
-#define IPIPE_NR_FAULTS         12
+#define IPIPE_NR_FAULTS		 12
 
 #endif /* CONFIG_IPIPE */
 
