@@ -70,13 +70,6 @@ config IPIPE_TRACE_IRQSOFF
 	  Activate this option if I-pipe shall trace the longest path
 	  with hard-IRQs switched off.
 
-config IPIPE_TRACE_OVERHEAD
-	bool "Trace overhead of trace function"
-	default y
-	---help---
-	  Activate this option if I-pipe shall trace overhead of trace
-	  function.
-
 config IPIPE_TRACE_SHIFT
 	int "Depth of trace log (14 => 16Kpoints, 15 => 32Kpoints)"
 	range 10 18

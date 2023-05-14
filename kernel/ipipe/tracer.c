@@ -20,6 +20,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include "asm/ipipe.h"
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/version.h>
@@ -66,6 +67,21 @@
 #define IPIPE_TFLG_CURRENT_DOMAIN(point) \
 	((point->flags & IPIPE_TFLG_CURRDOM_MASK) >> IPIPE_TFLG_CURRDOM_SHIFT)
 
+struct arch_trace_info {
+	unsigned long long csr_prmd;
+	unsigned long long csr_era;
+	unsigned long long csr_tcfg;
+	unsigned long long csr_tval;
+};
+
+static inline notrace void dump_arch_trace_info(struct arch_trace_info *trace_info)
+{
+	trace_info->csr_prmd = csr_readq(LOONGARCH_CSR_PRMD);
+	trace_info->csr_era = csr_readq(LOONGARCH_CSR_ERA);
+	trace_info->csr_tcfg = csr_readq(LOONGARCH_CSR_TCFG);
+	trace_info->csr_tval = csr_readq(LOONGARCH_CSR_TVAL);
+}
+
 struct ipipe_trace_point {
 	short type;
 	short flags;
@@ -73,10 +89,9 @@ struct ipipe_trace_point {
 	unsigned long parent_eip;
 	unsigned long v;
 	unsigned long long timestamp;
-#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
 	unsigned long long enter_time;
 	unsigned long long exit_time;
-#endif
+	struct arch_trace_info trace_info;
 };
 
 struct ipipe_trace_path {
@@ -123,6 +138,8 @@ static int pre_trace = IPIPE_DEFAULT_PRE_TRACE;
 static int post_trace = IPIPE_DEFAULT_POST_TRACE;
 static int back_trace = IPIPE_DEFAULT_BACK_TRACE;
 static int verbose_trace = 1;
+static int enable_trace_overhead = 0;
+static int enable_dump_arch = 0;
 static unsigned long trace_overhead;
 
 static unsigned long trigger_begin;
@@ -271,13 +288,12 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	struct ipipe_trace_point *point;
 	unsigned long flags;
 	int cpu;
-
-#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
 	unsigned long long enter_time;
-	ipipe_read_tsc(enter_time);
-#endif
 
 	flags = hard_local_irq_save_notrace();
+	
+	if (enable_trace_overhead)
+		ipipe_read_tsc(enter_time);
 
 	cpu = ipipe_processor_id();
  restart:
@@ -328,9 +344,10 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	point->eip = eip;
 	point->parent_eip = parent_eip;
 	point->v = v;
-#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
-	point->enter_time = enter_time;
-#endif
+	if (enable_trace_overhead)
+		point->enter_time = enter_time;
+	if (enable_dump_arch)
+		dump_arch_trace_info(&point->trace_info);
 
 	ipipe_read_tsc(point->timestamp);
 
@@ -407,9 +424,9 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 				      old_tp->nmi_saved_v);
 	}
 
-#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
-	ipipe_read_tsc(point->exit_time);
-#endif
+	if (enable_trace_overhead)
+		ipipe_read_tsc(point->exit_time);
+
 	hard_local_irq_restore_notrace(flags);
 }
 
@@ -859,19 +876,16 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 	unsigned long delay = 0;
 	int next;
 	char *mark = "  ";
-#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
 	unsigned long overhead = 0;
-#endif
 
 	next = WRAP_POINT_NO(point+1 - print_path->point);
 
 	if (next != print_path->trace_pos) {
 		delay = ipipe_tsc2ns(print_path->point[next].timestamp -
 				     point->timestamp);
-#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
-		overhead = ipipe_tsc2ns(point->exit_time -
+		if (enable_trace_overhead)
+			overhead = ipipe_tsc2ns(point->exit_time -
 					point->enter_time);
-#endif
 	}
 		
 
@@ -885,14 +899,14 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 
 	if (verbose_trace)
 		seq_printf(m, "%3lu.%03lu%c "
-#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
-		"(%3lu.%03lu)"
-#endif
+		"(%3lu.%03lu/%llx/%llx/%llx/%llx)"
 		, delay/1000, delay%1000,
 			   (point->flags & IPIPE_TFLG_NMI_HIT) ? 'N' : ' '
-#ifdef CONFIG_IPIPE_TRACE_OVERHEAD
 		, overhead/1000, overhead%1000
-#endif
+		, point->trace_info.csr_prmd
+		, point->trace_info.csr_era
+		, point->trace_info.csr_tcfg
+		, point->trace_info.csr_tval
 		);
 	else
 		seq_puts(m, " ");
@@ -1509,6 +1523,10 @@ void __init __ipipe_init_tracer(void)
 				      &back_trace);
 	__ipipe_create_trace_proc_val(trace_dir, "verbose",
 				      &verbose_trace);
+	__ipipe_create_trace_proc_val(trace_dir, "enable_dump_arch",
+				      &enable_dump_arch);
+	__ipipe_create_trace_proc_val(trace_dir, "enable_trace_overhead",
+				      &enable_trace_overhead);
 #ifdef CONFIG_IPIPE_TRACE_MCOUNT
 	proc_create_data("enable", 0644, trace_dir, &__ipipe_rw_enable_ops,
 			 &ipipe_trace_enable);
