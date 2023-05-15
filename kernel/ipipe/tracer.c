@@ -292,12 +292,12 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	int cpu;
 	unsigned long long enter_time;
 
-	if (enable_trace_overhead && !enable_inner_overhead)
+	if (enable_begin_overhead && !enable_inner_overhead)
 		ipipe_read_tsc(enter_time);
 
 	flags = hard_local_irq_save_notrace();
 	
-	if (enable_trace_overhead && enable_inner_overhead)
+	if (enable_begin_overhead && enable_inner_overhead)
 		ipipe_read_tsc(enter_time);
 
 	cpu = ipipe_processor_id();
@@ -349,7 +349,7 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	point->eip = eip;
 	point->parent_eip = parent_eip;
 	point->v = v;
-	if (enable_trace_overhead)
+	if (enable_begin_overhead)
 		point->enter_time = enter_time;
 	if (enable_dump_arch)
 		dump_arch_trace_info(&point->trace_info);
@@ -429,12 +429,12 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 				      old_tp->nmi_saved_v);
 	}
 
-	if (enable_trace_overhead && enable_inner_overhead)
+	if (enable_end_overhead && enable_inner_overhead)
 		ipipe_read_tsc(point->exit_time);
 
 	hard_local_irq_restore_notrace(flags);
 
-	if (enable_trace_overhead && !enable_inner_overhead)
+	if (enable_end_overhead && !enable_inner_overhead)
 		ipipe_read_tsc(point->exit_time);
 }
 
@@ -891,7 +891,7 @@ __ipipe_print_delay(struct seq_file *m, struct ipipe_trace_point *point)
 	if (next != print_path->trace_pos) {
 		delay = ipipe_tsc2ns(print_path->point[next].timestamp -
 				     point->timestamp);
-		if (enable_trace_overhead)
+		if (enable_begin_overhead && enable_end_overhead)
 			overhead = ipipe_tsc2ns(point->exit_time -
 					point->enter_time);
 	}
