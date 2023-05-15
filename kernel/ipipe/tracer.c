@@ -139,6 +139,7 @@ static int post_trace = IPIPE_DEFAULT_POST_TRACE;
 static int back_trace = IPIPE_DEFAULT_BACK_TRACE;
 static int verbose_trace = 1;
 static int enable_trace_overhead = 0;
+static int enable_inner_overhead = 0;
 static int enable_dump_arch = 0;
 static unsigned long trace_overhead;
 
@@ -290,9 +291,12 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	int cpu;
 	unsigned long long enter_time;
 
+	if (enable_trace_overhead && !enable_inner_overhead)
+		ipipe_read_tsc(enter_time);
+
 	flags = hard_local_irq_save_notrace();
 	
-	if (enable_trace_overhead)
+	if (enable_trace_overhead && enable_inner_overhead)
 		ipipe_read_tsc(enter_time);
 
 	cpu = ipipe_processor_id();
@@ -424,10 +428,13 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 				      old_tp->nmi_saved_v);
 	}
 
-	if (enable_trace_overhead)
+	if (enable_trace_overhead && enable_inner_overhead)
 		ipipe_read_tsc(point->exit_time);
 
 	hard_local_irq_restore_notrace(flags);
+
+	if (enable_trace_overhead && !enable_inner_overhead)
+		ipipe_read_tsc(point->exit_time);
 }
 
 static unsigned long __ipipe_global_path_lock(void)
@@ -1527,6 +1534,8 @@ void __init __ipipe_init_tracer(void)
 				      &enable_dump_arch);
 	__ipipe_create_trace_proc_val(trace_dir, "enable_trace_overhead",
 				      &enable_trace_overhead);
+	__ipipe_create_trace_proc_val(trace_dir, "enable_inner_overhead",
+				      &enable_inner_overhead);
 #ifdef CONFIG_IPIPE_TRACE_MCOUNT
 	proc_create_data("enable", 0644, trace_dir, &__ipipe_rw_enable_ops,
 			 &ipipe_trace_enable);
