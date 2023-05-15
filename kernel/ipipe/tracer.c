@@ -138,7 +138,8 @@ static int pre_trace = IPIPE_DEFAULT_PRE_TRACE;
 static int post_trace = IPIPE_DEFAULT_POST_TRACE;
 static int back_trace = IPIPE_DEFAULT_BACK_TRACE;
 static int verbose_trace = 1;
-static int enable_trace_overhead = 0;
+static int enable_begin_overhead = 0;
+static int enable_end_overhead = 0;
 static int enable_inner_overhead = 0;
 static int enable_dump_arch = 0;
 static unsigned long trace_overhead;
@@ -1532,8 +1533,10 @@ void __init __ipipe_init_tracer(void)
 				      &verbose_trace);
 	__ipipe_create_trace_proc_val(trace_dir, "enable_dump_arch",
 				      &enable_dump_arch);
-	__ipipe_create_trace_proc_val(trace_dir, "enable_trace_overhead",
-				      &enable_trace_overhead);
+	__ipipe_create_trace_proc_val(trace_dir, "enable_begin_overhead",
+				      &enable_begin_overhead);
+	__ipipe_create_trace_proc_val(trace_dir, "enable_end_overhead",
+				      &enable_end_overhead);
 	__ipipe_create_trace_proc_val(trace_dir, "enable_inner_overhead",
 				      &enable_inner_overhead);
 #ifdef CONFIG_IPIPE_TRACE_MCOUNT
