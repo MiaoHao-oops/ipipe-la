@@ -332,7 +332,7 @@ __ipipe_trace(enum ipipe_trace_type type, unsigned long eip,
 	point->enter_time = enter_time;
 #endif
 
-	ipipe_read_tsc(point->timestamp);
+	// ipipe_read_tsc(point->timestamp);
 
 	__ipipe_store_domain_states(point);
 
