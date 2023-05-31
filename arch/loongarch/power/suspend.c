@@ -69,8 +69,11 @@ static void arch_common_resume(void)
 {
 	sync_counter();
 	local_flush_tlb_all();
+#ifdef CONFIG_SMP
 	csr_writeq(per_cpu_offset(0), PERCPU_BASE_KS);
-
+#else
+	csr_writeq(0, PERCPU_BASE_KS);
+#endif
 	csr_writeq(saved_regs.pgd, LOONGARCH_CSR_PGDL);
 	csr_writeq(saved_regs.kpgd, LOONGARCH_CSR_PGDH);
 	csr_writel(saved_regs.pwctl0, LOONGARCH_CSR_PWCTL0);

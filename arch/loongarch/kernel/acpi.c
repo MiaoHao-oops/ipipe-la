@@ -190,8 +190,11 @@ void __init acpi_boot_table_init(void)
 static int set_processor_mask(u32 id, u32 flags)
 {
 
-	int cpu, cpuid = id;
+	int cpu;
+	int cpuid __maybe_unused;
 
+#ifdef CONFIG_SMP
+	cpuid = id;
 	if (num_processors >= nr_cpu_ids) {
 		pr_warn("acpi: nr_cpus/possible_cpus limit of %i reached."
 			"processor 0x%x ignored.\n", nr_cpu_ids, cpuid);
@@ -211,6 +214,9 @@ static int set_processor_mask(u32 id, u32 flags)
 		loongson_sysconf.reserved_cpus_mask &= (~(1 << cpuid));
 	} else
 		disabled_cpus++;
+#else
+	cpu = 0;
+#endif
 	return cpu;
 }
 
@@ -287,13 +293,16 @@ static int __init acpi_parse_madt_lapic_entries(void)
 
 static void __init acpi_process_madt(void)
 {
-	int i, error;
+	int error;
+	int i __maybe_unused;
 
+#ifdef CONFIG_SMP
 	for (i = 0; i < NR_CPUS; i++) {
 		__cpu_number_map[i] = -1;
 		__cpu_logical_map[i] = -1;
 	}
 	loongson_sysconf.reserved_cpus_mask = 0xFFFF;
+#endif
 
 	if (loongson_sysconf.bpi_version <= BPI_VERSION_V1) {
 

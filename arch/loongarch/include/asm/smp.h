@@ -44,6 +44,18 @@ static inline void plat_smp_setup(void)
 	mp_ops->smp_setup();
 }
 
+static inline int raw_smp_processor_id(void)
+{
+#if defined(__VDSO__)
+	extern int vdso_smp_processor_id(void)
+		__compiletime_error("VDSO should not call smp_processor_id()");
+	return vdso_smp_processor_id();
+#else
+	return current_thread_info()->cpu;
+#endif
+}
+#define raw_smp_processor_id raw_smp_processor_id
+
 #else /* !CONFIG_SMP */
 
 struct plat_smp_ops;
@@ -56,7 +68,6 @@ static inline void plat_smp_setup(void)
 static inline void register_smp_ops(const struct plat_smp_ops *ops)
 {
 }
-
 #endif /* !CONFIG_SMP */
 
 extern int smp_num_siblings;
@@ -66,17 +77,6 @@ extern cpumask_t cpu_sibling_map[];
 extern cpumask_t cpu_core_map[];
 extern cpumask_t cpu_foreign_map[];
 
-static inline int raw_smp_processor_id(void)
-{
-#if defined(__VDSO__)
-	extern int vdso_smp_processor_id(void)
-		__compiletime_error("VDSO should not call smp_processor_id()");
-	return vdso_smp_processor_id();
-#else
-	return current_thread_info()->cpu;
-#endif
-}
-#define raw_smp_processor_id raw_smp_processor_id
 
 /* Map from cpu id to sequential logical cpu number.  This will only
    not be idempotent when cpus failed to come on-line.	*/
@@ -106,6 +106,7 @@ extern struct secondary_data cpuboot_data;
 /* Mask of CPUs which are currently definitely operating coherently */
 extern cpumask_t cpu_coherent_mask;
 
+#ifdef CONFIG_SMP
 extern asmlinkage void smp_bootstrap(void);
 
 extern void calculate_cpu_foreign_map(void);
@@ -148,5 +149,6 @@ static inline void arch_send_call_function_ipi_mask(const struct cpumask *mask)
 {
 	mp_ops->send_ipi_mask(mask, SMP_CALL_FUNCTION);
 }
+#endif
 
 #endif /* __ASM_SMP_H */

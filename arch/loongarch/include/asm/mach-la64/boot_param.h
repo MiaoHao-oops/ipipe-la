@@ -89,6 +89,16 @@ struct _extention_list_hdr {
 	union extlist_line next_ext;
 } __attribute__((packed));
 
+struct loongsonlist_mem_map_legacy {
+	struct	_extention_list_hdr header;	/* {"M", "E", "M"} */
+	u8	map_count;
+	struct	loongson_mem_map {
+		u32 mem_type;
+		u64 mem_start;
+		u64 mem_size;
+	} __packed map[LOONGSON3_BOOT_MEM_MAP_MAX];
+} __packed;
+
 struct loongsonlist_mem_map {
 	struct	_extention_list_hdr header;	/*{"M", "E", "M"}*/
 	u8	map_count;
@@ -124,6 +134,12 @@ struct loongsonlist_screeninfo{
 };
 
 extern void *loongson_fdt_blob;
+#ifdef CONFIG_LOONGSON_2K500
+extern u32 __dtb_ls2k500_hl_mb_begin[];
+extern u32 __dtb_ls2k500_mini_dp_begin[];
+extern u32 __dtb_ls2k500_dayu400_mb_begin[];
+extern u32 __dtb_ls2k500_modi_hct_begin[];
+#endif
 extern struct loongson_board_info b_info;
 extern struct boot_params *efi_bp;
 extern void *g_mmap;

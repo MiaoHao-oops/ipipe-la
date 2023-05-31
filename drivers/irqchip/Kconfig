@@ -421,6 +421,16 @@ config LOONGARCH_EXTIOI
 	help
 	  Support for the Loongson3 Extend I/O Interrupt Vector Controller.
 
+config LOONGSON_IOINTC_2K500
+	bool "Loongson I/O Interrupt Controller for 2k500 SoC"
+	depends on LOONGARCH
+	depends on LOONGSON_2K500
+	default y if LOONGSON_2K500
+	select IRQ_DOMAIN_HIERARCHY
+	select GENERIC_IRQ_CHIP
+	help
+	  Support for the Loongson 2k500 SoC`s I/O Interrupt Vector Controller.
+
 config LOONGSON_PCH_LPC
 	bool "Loongson PCH LPC Controller"
 	depends on MACH_LOONGSON64 || COMPILE_TEST

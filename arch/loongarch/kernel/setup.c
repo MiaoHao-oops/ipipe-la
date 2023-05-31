@@ -300,6 +300,73 @@ static unsigned long __init init_initrd(void)
 /*
  * arch_mem_init - initialize memory management subsystem
  */
+
+static void __init dt_bootmem_init(void)
+{
+	phys_addr_t ramstart, ramend;
+	unsigned long start, end;
+	int i;
+
+	ramstart = memblock_start_of_DRAM();
+	ramend = memblock_end_of_DRAM();
+
+	/*
+	 * Sanity check any INITRD first. We don't take it into account
+	 * for bootmem setup initially, rely on the end-of-kernel-code
+	 * as our memory range starting point. Once bootmem is inited we
+	 * will reserve the area used for the initrd.
+	 */
+	// it`s done in setup_arch() already.
+	// No need to do it again at here.
+	// init_initrd();
+
+	/* Reserve memory occupied by kernel. */
+	memblock_reserve(__pa_symbol(&_text),
+			__pa_symbol(&_end) - __pa_symbol(&_text));
+
+	/*
+	 * Reserve any memory between the start of RAM and PHYS_OFFSET
+	 */
+	if (ramstart > PHYS_OFFSET)
+		memblock_reserve(PHYS_OFFSET, ramstart - PHYS_OFFSET);
+
+	if (PFN_UP(ramstart) > ARCH_PFN_OFFSET) {
+		pr_info("Wasting %lu bytes for tracking %lu unused pages\n",
+			(unsigned long)((PFN_UP(ramstart) - ARCH_PFN_OFFSET) * sizeof(struct page)),
+			(unsigned long)(PFN_UP(ramstart) - ARCH_PFN_OFFSET));
+	}
+
+	min_low_pfn = ARCH_PFN_OFFSET;
+	max_pfn = PFN_DOWN(ramend);
+	for_each_mem_pfn_range(i, MAX_NUMNODES, &start, &end, NULL) {
+		/*
+		 * Skip highmem here so we get an accurate max_low_pfn if low
+		 * memory stops short of high memory.
+		 * If the region overlaps HIGHMEM_START, end is clipped so
+		 * max_pfn excludes the highmem portion.
+		 */
+		if (start >= PFN_DOWN(HIGHMEM_START))
+			continue;
+		if (end > PFN_DOWN(HIGHMEM_START))
+			end = PFN_DOWN(HIGHMEM_START);
+		if (end > max_low_pfn)
+			max_low_pfn = end;
+	}
+
+	if (min_low_pfn >= max_low_pfn)
+		panic("Incorrect memory mapping !!!");
+
+	if (max_pfn > PFN_DOWN(HIGHMEM_START)) {
+#ifdef CONFIG_HIGHMEM
+		highstart_pfn = PFN_DOWN(HIGHMEM_START);
+		highend_pfn = max_pfn;
+#else
+		max_low_pfn = PFN_DOWN(HIGHMEM_START);
+		max_pfn = max_low_pfn;
+#endif
+	}
+}
+
 static int usermem __initdata;
 
 static int __init early_parse_mem(char *p)
@@ -553,6 +620,9 @@ static void __init arch_mem_init(void)
 	 * only after this point
 	 */
 	memblock_set_current_limit(PFN_PHYS(max_low_pfn));
+
+	if (loongson_fdt_blob)
+		dt_bootmem_init();
 
 #ifdef CONFIG_PROC_VMCORE
 	if (setup_elfcorehdr && setup_elfcorehdr_size) {

@@ -171,6 +171,7 @@ static inline void hard_local_irq_restore(unsigned long x)
 
 #define arch_irqs_disabled()		ipipe_test_root()
 #define hard_irq_disable()		hard_local_irq_disable()
+#define hard_irq_enable()		hard_local_irq_enable()
 
 static inline unsigned long arch_mangle_irq_bits(int virt, unsigned long real)
 {

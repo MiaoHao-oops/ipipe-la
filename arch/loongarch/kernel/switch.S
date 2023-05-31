@@ -33,9 +33,9 @@ SYM_FUNC_START(resume)
 	stptr.d a4, a0, THREAD_SCHED_CFA
 
 #if defined(CONFIG_STACKPROTECTOR) && !defined(CONFIG_SMP)
-	PTR_LA	t8, __stack_chk_guard
-	LONG_L	t9, a1, TASK_STACK_CANARY
-	LONG_S	t9, t8, 0
+	la	t7, __stack_chk_guard
+	LONG_L	t8, a1, TASK_STACK_CANARY
+	LONG_S	t8, t7, 0
 #endif
 
 	/*

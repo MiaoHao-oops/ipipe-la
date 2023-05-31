@@ -7,6 +7,8 @@
 #include <linux/efi.h>
 #include <linux/slab.h>
 
+#define SMBIOS_ENTRY_POINT_SCAN_START	0x0fffe000
+
 #define dmi_early_remap early_ioremap
 #define dmi_early_unmap	early_iounmap
 #define dmi_alloc(l)	alloc_bootmem(l)

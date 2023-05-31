@@ -10,6 +10,7 @@
  * option) any later version.
  */
 
+#include "linux/stddef.h"
 #include <linux/bootmem.h>
 #include <linux/dmi.h>
 #include <asm/bootinfo.h>
@@ -193,12 +194,58 @@ static void __init parse_dt_cpus(void)
 		loongson_sysconf.nr_nodes = nodes_weight(nodes_mask);
 }
 
-static void *get_fdt(efi_system_table_t *sys_table)
+static char cpu_full_name_bak[] = "        -        ";
+#ifdef CONFIG_LOONGSON_2K500
+static char cpu_ls2k500_name[] = "loongson-2k500";
+#endif
+
+static inline int check_cpu_full_name_invaild(int cpu)
 {
+	if (!__cpu_full_name[cpu])
+		return 1;
+	else if (!strncmp(__cpu_full_name[cpu], cpu_full_name_bak, 17))
+		return 1;
+	else if (!strlen(__cpu_full_name[cpu]))
+		return 1;
+	else
+		return 0;
+}
+
+static void *get_fdt(
+#ifdef CONFIG_EFI
+	efi_system_table_t *sys_table
+#else
+	void
+#endif
+)
+{
+#ifdef CONFIG_EFI
 	efi_config_table_t *tables;
+#endif
 	void *fdt;
 	int i;
 
+#ifndef CONFIG_EFI
+#ifdef CONFIG_LOONGSON_2K500
+
+	if (b_info.board_name) {
+		if (!strncmp(b_info.board_name, "LS2K500-HL-MB", 13))
+			fdt = &__dtb_ls2k500_hl_mb_begin;
+		else if (!strncmp(b_info.board_name, "LS2K500-MINI-DP", 15))
+			fdt = &__dtb_ls2k500_mini_dp_begin;
+		else if (!strncmp(b_info.board_name, "LS2K500-DAYU400-MB", 17))
+			fdt = &__dtb_ls2k500_dayu400_mb_begin;
+		else if (!strncmp(b_info.board_name, "LS2K500-MODI-HCT", 16))
+			fdt = &__dtb_ls2k500_modi_hct_begin;
+		else
+			fdt = &__dtb_ls2k500_mini_dp_begin;
+
+		for (i = 0; i < NR_CPUS; ++i)
+			if (check_cpu_full_name_invaild(i))
+				__cpu_full_name[i] = cpu_ls2k500_name;
+	}
+#endif
+#else
 	tables = (efi_config_table_t *) sys_table->tables;
 	fdt = NULL;
 
@@ -208,6 +255,7 @@ static void *get_fdt(efi_system_table_t *sys_table)
 			fdt = (void *)TO_CAC((u64)fdt);
 			break;
 		}
+#endif
 
 	if (!fdt && IS_ENABLED(CONFIG_BUILTIN_DTB)
 			&& (&__dtb_start != &__dtb_end))
@@ -219,45 +267,55 @@ static void *get_fdt(efi_system_table_t *sys_table)
 	return fdt;
 }
 
-static void loongson_mem_init(void)
-{
-	int i;
+// static void loongson_mem_init(void)
+// {
+// 	int i;
 
-	memset(&global_mem_map, 0, sizeof(global_mem_map));
-	global_mem_map.map_count = boot_mem_map.nr_map;
-	for (i = 0; i < boot_mem_map.nr_map; i++) {
-		struct boot_mem_map_entry *bm_entry = boot_mem_map.map + i;
-		struct _loongson_mem_map *lm_entry = global_mem_map.map + i;
+// 	memset(&global_mem_map, 0, sizeof(global_mem_map));
+// 	global_mem_map.map_count = boot_mem_map.nr_map;
+// 	for (i = 0; i < boot_mem_map.nr_map; i++) {
+// 		struct boot_mem_map_entry *bm_entry = boot_mem_map.map + i;
+// 		struct _loongson_mem_map *lm_entry = global_mem_map.map + i;
 
-		if (bm_entry->type == BOOT_MEM_RAM)
-			lm_entry->mem_type = ADDRESS_TYPE_SYSRAM;
-		else
-			lm_entry->mem_type = ADDRESS_TYPE_RESERVED;
+// 		if (bm_entry->type == BOOT_MEM_RAM)
+// 			lm_entry->mem_type = ADDRESS_TYPE_SYSRAM;
+// 		else
+// 			lm_entry->mem_type = ADDRESS_TYPE_RESERVED;
 
-		lm_entry->mem_start = bm_entry->addr;
-		lm_entry->mem_size = bm_entry->size;
-	}
+// 		lm_entry->mem_start = bm_entry->addr;
+// 		lm_entry->mem_size = bm_entry->size;
+// 	}
 
-	if (global_mem_map.map_count == 0)
-		panic("No memory available!");
-}
+// 	if (global_mem_map.map_count == 0)
+// 		panic("No memory available!");
+// }
 
 static bool __init acpi_tables_present(void)
 {
+#ifdef CONFIG_EFI
 	return efi.acpi20 != EFI_INVALID_TABLE_ADDR ||
 			efi.acpi != EFI_INVALID_TABLE_ADDR;
+#else
+	return false;
+#endif
 }
 
 static void __init fdt_setup(void)
 {
 	unsigned long fdt_addr;
 
+#ifdef CONFIG_EFI
 	if (efi.systab) {
 		/* Look for a device tree configuration table entry. */
 		fdt_addr = (uintptr_t)get_fdt(efi.systab);
 		if (fdt_addr)
 			loongson_fdt_blob = (void *)fdt_addr;
 	}
+#else
+	fdt_addr = (uintptr_t)get_fdt();
+	if (fdt_addr)
+		loongson_fdt_blob = (void *)fdt_addr;
+#endif
 
 	if (!loongson_fdt_blob) {
 		/*
@@ -269,23 +327,23 @@ static void __init fdt_setup(void)
 		return;
 	}
 
+#ifndef CONFIG_LOONGSON_2K500
 	if (g_mmap != NULL) {
 		memblock_remove_mem();
 		pr_warn("Ext list mem info is ignored!\n");
 	}
+#endif
 
 	__dt_setup_arch(loongson_fdt_blob);
 	early_init_fdt_reserve_self();
 	early_init_fdt_scan_reserved_mem();
 
-	loongson_mem_init();
-	g_mmap = &global_mem_map;
+	// loongson_mem_init();
+	// g_mmap = &global_mem_map;
 	memblock_and_maxpfn_init();
 	device_tree_init();
 	parse_dt_cpus();
 	parse_dt_topology();
-
-	disable_acpi();
 }
 
 static int __init add_legacy_isa_io(struct fwnode_handle *fwnode, unsigned long isa_base)
@@ -423,10 +481,12 @@ static void __init parse_bios_table(const struct dmi_header *dm)
 		return ;
 	}
 
+#ifdef CONFIG_EFI
 	if (bios_extern & LOONGSON_EFI_ENABLE)
 		set_bit(EFI_BOOT, &efi.flags);
 	else
 		clear_bit(EFI_BOOT, &efi.flags);
+#endif
 }
 
 static void __init find_tokens(const struct dmi_header *dm, void *dummy)
@@ -455,10 +515,22 @@ void __init early_init(void)
 	fw_init_cmdline();
 	fw_init_env();
 	memblock_and_maxpfn_init();
+#ifdef CONFIG_EFI
 	efi_init();
+#endif
+	dmi_scan_machine();
+	if (dmi_available) {
+		dmi_set_dump_stack_arch_desc();
+		smbios_parse();
+	}
+	pr_info("The BIOS Version: %s\n", b_info.bios_version);
+
 	if (!acpi_tables_present()) {
 		loongson_sysconf.is_soc_cpu = 1;
 		fdt_setup();
+#ifdef CONFIG_ACPI
+		disable_acpi();
+#endif
 		return;
 	}
 	loongson_sysconf.pcie_wake_enabled =
@@ -483,14 +555,10 @@ void __init platform_init(void)
 #else
 	fw_init_memory();
 #endif
-	dmi_scan_machine();
-	if (dmi_available) {
-		dmi_set_dump_stack_arch_desc();
-		smbios_parse();
-	}
-	pr_info("The BIOS Version: %s\n", b_info.bios_version);
 
+#ifdef CONFIG_EFI
 	efi_runtime_init();
+#endif
 
 	register_smp_ops(&loongson3_smp_ops);
 }

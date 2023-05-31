@@ -175,5 +175,5 @@ SYM_CODE_START(smp_bootstrap)
 	smp_slave_setup
 	bl	start_secondary
 SYM_CODE_END(smp_bootstrap)
-SYM_ENTRY(kernel_entry_end, SYM_L_GLOBAL, SYM_A_NONE)
 #endif /* CONFIG_SMP */
+SYM_ENTRY(kernel_entry_end, SYM_L_GLOBAL, SYM_A_NONE)

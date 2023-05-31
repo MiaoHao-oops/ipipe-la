@@ -27,18 +27,18 @@ void __init memblock_and_maxpfn_init(void)
 	int i;
 	u32 mem_type, map_count;
 	u64 mem_start, mem_end, mem_size;
-	struct  _loongson_mem_map map_entry[FIX_MAP_ENTRY];
+	struct loongsonlist_mem_map* new_map = (struct loongsonlist_mem_map*)g_mmap;
 
 	if (!g_mmap)
 		return;
 
-	map_count = walk_mem_entry(map_entry);
+	map_count = new_map->map_count;
 	/* Parse memory information and activate */
 	for (i = 0; i < map_count; i++) {
-		mem_type = map_entry[i].mem_type;
-		mem_start = map_entry[i].mem_start;
-		mem_size = map_entry[i].mem_size;
-		mem_end = map_entry[i].mem_start + mem_size;
+		mem_type = new_map->map[i].mem_type;
+		mem_start = new_map->map[i].mem_start;
+		mem_size = new_map->map[i].mem_size;
+		mem_end = mem_start + mem_size;
 
 		switch (mem_type) {
 		case ADDRESS_TYPE_SYSRAM:
@@ -55,13 +55,13 @@ void __init memblock_remove_mem(void)
 {
 	int i, map_count;
 	u64 mem_start, mem_size;
-	struct  _loongson_mem_map map_entry[FIX_MAP_ENTRY];
+	struct loongsonlist_mem_map* new_map = (struct loongsonlist_mem_map*)g_mmap;
 
-	map_count = walk_mem_entry(map_entry);
+	map_count = new_map->map_count;
 	/* Parse memory information and activate */
 	for (i = 0; i < map_count; i++) {
-		mem_start = map_entry[i].mem_start;
-		mem_size = map_entry[i].mem_size;
+		mem_start = new_map->map[i].mem_start;
+		mem_size = new_map->map[i].mem_size;
 
 		memblock_remove(mem_start, mem_size);
 	}
@@ -75,43 +75,43 @@ void __init fw_init_memory(void)
 	static unsigned long num_physpages;
 	unsigned long start_pfn, end_pfn;
 	unsigned long kernel_end_pfn;
-	struct  _loongson_mem_map map_entry[FIX_MAP_ENTRY];
+	struct loongsonlist_mem_map* new_map = (struct loongsonlist_mem_map*)g_mmap;
 
-	map_count = walk_mem_entry(map_entry);
+	map_count = new_map->map_count;
 	/* Parse memory information and activate */
 	for (i = 0; i < map_count; i++) {
-		mem_type = map_entry[i].mem_type;
-		mem_start = map_entry[i].mem_start;
-		mem_size = map_entry[i].mem_size;
+		mem_type = new_map->map[i].mem_type;
+		mem_start = new_map->map[i].mem_start;
+		mem_size = new_map->map[i].mem_size;
 		mem_end = mem_start + mem_size;
 
 		switch (mem_type) {
 		case ADDRESS_TYPE_SYSRAM:
 			mem_start = PFN_ALIGN(mem_start);
 			mem_end = PFN_ALIGN(mem_end - PAGE_SIZE + 1);
-			if (mem_start >= mem_end)
-				break;
 			num_physpages += (mem_size >> PAGE_SHIFT);
 			pr_info("mem_start:0x%llx, mem_size:0x%llx Bytes\n",
 				mem_start, mem_size);
 			pr_info("start_pfn:0x%llx, end_pfn:0x%llx\n",
 			mem_start >> PAGE_SHIFT, (mem_start + mem_size) >>
 			PAGE_SHIFT);
+			if (mem_start >= mem_end)
+				break;
 
-			add_memory_region(mem_start, mem_size,
-					BOOT_MEM_RAM);
+			// add_memory_region(mem_start, mem_size,
+			// 		BOOT_MEM_RAM);
 			memblock_set_node(mem_start, mem_size,
 					&memblock.memory, 0);
 			break;
 		case ADDRESS_TYPE_ACPI:
+			mem_start = PFN_ALIGN(mem_start);
+			mem_end = PFN_ALIGN(mem_end - PAGE_SIZE + 1);
+			num_physpages += (mem_size >> PAGE_SHIFT);
 			pr_info("mem_type:%d ", mem_type);
 			pr_info("mem_start:0x%llx, mem_size:0x%llx Bytes\n",
 				mem_start, mem_size);
-			add_memory_region(mem_start,
-					mem_size, BOOT_MEM_RESERVED);
-			mem_start = PFN_ALIGN(mem_start - PAGE_SIZE + 1);
-			mem_end = PFN_ALIGN(mem_end);
-			mem_size = mem_end - mem_start;
+			// add_memory_region(mem_start,
+			// 		mem_size, BOOT_MEM_RESERVED);
 			memblock_add(mem_start, mem_size);
 			memblock_mark_nomap(mem_start, mem_size);
 			memblock_set_node(mem_start, mem_size,
@@ -122,8 +122,8 @@ void __init fw_init_memory(void)
 			pr_info("mem_type:%d ", mem_type);
 			pr_info("mem_start:0x%llx, mem_size:0x%llx Bytes\n",
 				mem_start, mem_size);
-			add_memory_region(mem_start, mem_size,
-					BOOT_MEM_RESERVED);
+			// add_memory_region(mem_start, mem_size,
+			// 		BOOT_MEM_RESERVED);
 			memblock_reserve(mem_start, mem_size);
 			break;
 		}

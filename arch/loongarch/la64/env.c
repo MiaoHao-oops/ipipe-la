@@ -53,12 +53,34 @@ static u8 ext_listhdr_checksum(u8 *buffer, u32 length)
 	return (sum);
 }
 
+extern struct loongsonlist_mem_map global_mem_map;
+
 static int parse_mem(struct _extention_list_hdr *head)
 {
+	struct loongsonlist_mem_map_legacy *ptr;
+	int i;
+
 	g_mmap = head;
 	if (ext_listhdr_checksum((u8 *)g_mmap, head->length)) {
 		printk("mem checksum error\n");
 		return -EPERM;
+	}
+
+	if (loongson_sysconf.bpi_version < BPI_VERSION_V3) {
+		ptr = (struct loongsonlist_mem_map_legacy *)head;
+
+		pr_info("convert legacy mem map to new mem map.\n");
+		memcpy(&global_mem_map, ptr, sizeof(global_mem_map.header));
+		global_mem_map.map_count = ptr->map_count;
+		for (i = 0; i < ptr->map_count; i++) {
+			global_mem_map.map[i].mem_type = ptr->map[i].mem_type;
+			global_mem_map.map[i].mem_start = ptr->map[i].mem_start;
+			global_mem_map.map[i].mem_size = ptr->map[i].mem_size;
+			pr_info("mem_type:%d ", ptr->map[i].mem_type);
+			pr_info("mem_start:0x%llx, mem_size:0x%llx Bytes\n",
+				ptr->map[i].mem_start, ptr->map[i].mem_size);
+		}
+		g_mmap = &global_mem_map;
 	}
 	return 0;
 }
@@ -159,11 +181,14 @@ static int get_bpi_version(u64 *signature)
 
 static void __init parse_bpi_flags(void)
 {
-	if (efi_bp->flags & BPI_FLAGS_UEFI_SUPPORTED) {
+#ifdef CONFIG_EFI
+	if (efi_bp->flags & BPI_FLAGS_UEFI_SUPPORTED)
 		set_bit(EFI_BOOT, &efi.flags);
-	} else {
+	else
 		clear_bit(EFI_BOOT, &efi.flags);
-	}
+#endif
+	if (efi_bp->flags & BPI_FLAGS_SOC_CPU)
+		loongson_sysconf.is_soc_cpu = 1;
 }
 
 void __init fw_init_env(void)

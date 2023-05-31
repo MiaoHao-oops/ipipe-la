@@ -384,7 +384,7 @@ config INTEL_QUARK_DTS_THERMAL
 
 config LOONGSON2K_THERMAL
 	tristate "loongson-2k SOC thermal driver"
-	depends on OF && CPU_LOONGSON2K
+	depends on OF && (CPU_LOONGSON2K || LOONGSON_2K500)
 	default m
 	help
 	  Enable this to plug loongson-2k SOC's thermal sensor driver into the Linux

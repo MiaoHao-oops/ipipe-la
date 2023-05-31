@@ -16,6 +16,7 @@
  *
  * =====================================================================================
  */
+#include "linux/hardirq.h"
 #include <linux/irq.h>
 #include <linux/irqchip.h>
 #include <linux/spinlock_types.h>
@@ -218,7 +219,8 @@ static void ls2k500_iointc_irq_handler(struct irq_desc *desc)
 	while (pending) {
 		irq = fls64(pending) - 1;
 		virq = irq_linear_revmap(priv->domain, irq);
-		do_IRQ(virq);
+		if (virq > 0)
+			ipipe_handle_demuxed_irq(virq);
 		pending &= ~BIT(irq);
 	}
 }

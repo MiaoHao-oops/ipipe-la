@@ -287,7 +287,7 @@ static inline void tlbrefill_reinit(unsigned int cpu)
 	csr_writeq(tlbrefill_opt[cpu], LOONGARCH_CSR_TLBRENTRY);
 }
 #else
-#define tlbrefill_reinit()	do {} while (0)
+#define tlbrefill_reinit(cpu)	do {} while (0)
 #endif
 
 static void build_tlb_handler(int cpu)

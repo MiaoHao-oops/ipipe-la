@@ -62,7 +62,11 @@ static void liointc_chained_handle_irq(struct irq_desc *desc)
 	struct irq_chip *chip = irq_desc_get_chip(desc);
 	struct irq_chip_generic *gc = handler->priv->gc;
 	u32 pending;
+#ifdef CONFIG_SMP
 	int cpuid = cpu_logical_map(smp_processor_id());
+#else
+	int cpuid = 0;
+#endif
 
 	chained_irq_enter(chip, desc);
 
@@ -162,7 +166,7 @@ int __init liointc_init(struct resource *res,
 
 	for (i = 0; i < LIOINTC_CHIP_IRQ; i++) {
 		/* Generate core part of map cache */
-		priv->map_cache[i] |= BIT(cpu_logical_map(0));
+		priv->map_cache[i] |= BIT(loongson_sysconf.boot_cpu_id);
 		writeb(priv->map_cache[i], base + i);
 	}
 

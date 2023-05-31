@@ -49,8 +49,8 @@ obj-$(CONFIG_LOONGARCH_EXTIOI)		+= irq-loongarch-extioi.o
 obj-$(CONFIG_LOONGSON_PCH_MSI)		+= irq-loongson-pch-msi.o
 obj-$(CONFIG_LOONGSON_PCH_PIC)		+= irq-loongson-pch-pic.o
 obj-$(CONFIG_LOONGSON_PCH_LPC)		+= irq-loongson-pch-lpc.o
-obj-$(CONFIG_LOONGSON_MACH2K)		+= irq-loongson-2k1000-iointc.o irq-loongson-2k1000-msi.o
-obj-$(CONFIG_MACH_LOONGSON64)		+= irq-loongson-2k500-iointc.o
+obj-$(CONFIG_LOONGSON_MACH2K1000)	+= irq-loongson-2k1000-iointc.o irq-loongson-2k1000-msi.o
+obj-$(CONFIG_LOONGSON_IOINTC_2K500)	+= irq-loongson-2k500-iointc.o
 
 obj-$(CONFIG_SIRF_IRQ)			+= irq-sirfsoc.o
 obj-$(CONFIG_JCORE_AIC)			+= irq-jcore-aic.o

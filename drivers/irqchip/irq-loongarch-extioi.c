@@ -19,6 +19,10 @@
 #include <linux/syscore_ops.h>
 #include <asm/irq_cpu.h>
 
+#ifndef CONFIG_SMP
+#define cpu_logical_map(cpu)	(0)
+#endif
+
 #define VEC_COUNT_PER_REG	64
 #define MAX_EIO_NODES (NR_CPUS / CORES_PER_EXTIOI_NODE)
 
